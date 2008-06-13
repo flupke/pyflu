@@ -1,16 +1,11 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages, Extension
-from palette import version
-
-
-fractal_plane_module = Extension('palette.plugins.fractal_plane_ext',
-        sources=['palette/plugins/fractal_plane_ext.cpp'],
-        extra_compile_args=["-O2", "-march=i686"])
+from pyflu import version
 
 
 setup(
-    name = "Palette",
+    name = "pyflu",
     version = version(),
     author = "Luper Rouch",
     author_email = "luper.rouch@gmail.com",
