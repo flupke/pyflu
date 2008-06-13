@@ -10,10 +10,5 @@ setup(
     author = "Luper Rouch",
     author_email = "luper.rouch@gmail.com",
 
-    packages = find_packages(exclude=["palette.bin"]),    
-    scripts = ["palette/bin/run-palette.py"],
-
-    install_requires = ["louie"],
-    install_requires = ["pygame"],
-    ext_modules = [fractal_plane_module]
+    packages = find_packages(),    
 )
