@@ -26,19 +26,27 @@ False
 
 """
 
-import sys
 import os.path
 from getopt import gnu_getopt as getopt, GetoptError
+import textwrap
+
+
+class GetoptAppException(Exception): pass
+class GetoptAppError(Exception): pass
+class InvalidCommandLine(GetoptAppError): pass
+class HelpPrinted(GetoptAppException): pass
+class RequiredOptionMissing(GetoptAppError): pass
 
 
 class Option(object):
     """Stores the description of a getopt option"""
 
-    def __init__(self, long, short, takes_value, desc):
+    def __init__(self, long, short, takes_value, desc, required=False):
         self.short = short
         self.long = long
         self.takes_value = takes_value
         self.desc = desc
+        self.required = required
 
     def short_getopt(self):
         if not self.short:
@@ -60,27 +68,33 @@ class Option(object):
         else:
             value = ""
         if self.short:
-            return "\t--%s -%s %s\n\t\t%s" % (self.long, self.short, value,
-                    self.desc)
-        return "\t--%s %s\n\t\t%s" % (self.long, value, self.desc)
+            return "--%s -%s %s" % (self.long, self.short, value)
+        return "--%s %s" % (self.long, value)
 
 
 class OptionsList(object):
     """A list of Option objects"""
 
-    def __init__(self, values, nb_args=None, options_desc="[OPTIONS]",
-            args_desc="[ARGS]"):
+    def __init__(self, options, description, nb_args=None, 
+            options_desc="[OPTIONS]", args_desc="[ARGS]"):
         self.nb_args = nb_args
         self.options_desc = options_desc
-        self.args_desc = args_desc
-        self.options = [Option("help", None, False, "print help")]
+        if nb_args is None:
+            self.args_desc = ""
+        else:
+            self.args_desc = args_desc
+        self.options = [Option("help", None, False, "Print this help and exit")]
         self.by_short = {}
         self.by_long = {}
-        for opt_desc in values:
+        self.description = description
+        self.required_options = []
+        for opt_desc in options:
             option = Option(*opt_desc)
             self.options.append(option)
             self.by_short[option.short] = option
             self.by_long[option.long] = option
+            if option.required:
+                self.required_options.append(option.long)
 
     def parse(self, argv):
         # Make the getopt arguments
@@ -93,17 +107,13 @@ class OptionsList(object):
         try: 
             options, arguments = getopt(argv[1:], short_opts, long_opts)
         except GetoptError, e:
-            print e
-            print self.usage(argv[0])
-            sys.exit(1)
+            raise InvalidCommandLine(str(e))
         # Print help if requested
         if ("--help", "") in options:
-            print self.help(argv[0])
-            sys.exit(0)
+            raise HelpPrinted(self.help(argv[0]))
         # Verify number of arguments is correct
         if self.nb_args is not None and len(arguments) != self.nb_args:
-            print self.usage(argv[0])
-            sys.exit(1)
+            raise InvalidCommandLine("incorrect number of arguments")
         # Transform the parsed options into a dictionnary mapping long option
         # names to values
         self.values = {}
@@ -113,6 +123,11 @@ class OptionsList(object):
                 self.values[opt[2:]] = value
             else:
                 self.values[self.by_short[opt[1:]].long] = value
+        # Verify required options were passed
+        for option_name in self.required_options:
+            if option_name not in self.values:
+                raise RequiredOptionMissing("required --%s option missing" %
+                        option_name)
         return arguments
 
     def usage(self, executable):
@@ -121,8 +136,22 @@ class OptionsList(object):
                 self.args_desc)
 
     def help(self, executable):
-        return "%s\n%s" % (self.usage(executable), 
-                "\n".join([str(x) for x in self.options]))
+        options_text = []
+        max_options_len = 0
+        padding = 3
+        # Get rendered options maximum text width
+        for option in self.options:
+            opt_text = " " * padding + str(option)
+            options_text.append(opt_text)
+            max_options_len = max(max_options_len, len(opt_text) + 1)
+        # Render options description
+        for i, option in enumerate(self.options):
+            sep = " " * (max_options_len - len(options_text[i]))
+            nl_sep = " " * max_options_len
+            options_text[i] = "\n".join(textwrap.wrap(
+                options_text[i] + sep + option.desc, subsequent_indent=nl_sep))
+        return "%s\n%s\nOptions:\n%s\n" % (self.description, 
+                self.usage(executable), "\n".join(options_text))
 
     def __getitem__(self, key):
         """
@@ -139,3 +168,5 @@ class OptionsList(object):
             return True
         return False
 
+    def __contains__(self, key):
+        return self.values.has_key(key)
