@@ -40,12 +40,14 @@ class RequiredOptionMissing(GetoptAppError): pass
 class Option(object):
     """Stores the description of a getopt option"""
 
-    def __init__(self, long, short, takes_value, desc, required=False):
+    def __init__(self, long, short, takes_value, desc, required=False,
+            default=None):
         self.short = short
         self.long = long
         self.takes_value = takes_value
         self.desc = desc
         self.required = required
+        self.default = default
 
     def short_getopt(self):
         if not self.short:
@@ -87,6 +89,7 @@ class OptionsList(object):
         self.by_long = {}
         self.description = description
         self.required_options = []
+        self.defaults = {}
         for opt_desc in options:
             option = Option(*opt_desc)
             self.options.append(option)
@@ -94,6 +97,8 @@ class OptionsList(object):
             self.by_long[option.long] = option
             if option.required:
                 self.required_options.append(option.long)
+            if option.default is not None:
+                self.defaults[option.long] = option.default
 
     def parse(self, argv):
         # Make the getopt arguments
@@ -115,7 +120,7 @@ class OptionsList(object):
             raise InvalidCommandLine("incorrect number of arguments")
         # Transform the parsed options into a dictionnary mapping long option
         # names to values
-        self.values = {}
+        self.values = self.defaults.copy()
         for opt, value in options:
             # Strip the beginning - or --
             if opt.startswith("--"):
@@ -147,8 +152,11 @@ class OptionsList(object):
         for i, option in enumerate(self.options):
             sep = " " * (max_options_len - len(options_text[i]))
             nl_sep = " " * max_options_len
-            options_text[i] = "\n".join(textwrap.wrap(
-                options_text[i] + sep + option.desc, subsequent_indent=nl_sep))
+            text = options_text[i] + sep + option.desc
+            if option.default is not None:
+                text += " (default: %s)" % option.default
+            options_text[i] = "\n".join(textwrap.wrap(text, 
+                subsequent_indent=nl_sep))
         return "%s\n%s\nOptions:\n%s\n" % (self.description, 
                 self.usage(executable), "\n".join(options_text))
 
