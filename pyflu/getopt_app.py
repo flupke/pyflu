@@ -22,7 +22,6 @@ True
 False
 >>> options["name"]
 'john'
->>> arguments = options.parse(["-p", "--name", "john", "woo"])
 
 """
 
@@ -167,6 +166,12 @@ class OptionsList(object):
         if self.values.has_key(key):
             return True
         return False
+
+    def __setitem__(self, key, value):
+        option = self.by_long[key]
+        if not option.takes_value:
+            raise ValueError("can't set value for option '%s'" % key)
+        self.values[key] = value
 
     def __contains__(self, key):
         return self.values.has_key(key)
