@@ -177,9 +177,10 @@ class OptionsList(object):
 
     def __setitem__(self, key, value):
         option = self.by_long[key]
-        if not option.takes_value:
-            raise ValueError("can't set value for option '%s'" % key)
-        self.values[key] = value
+        if option.takes_value:
+            self.values[key] = value
+        else:
+            self.values[key] = bool(value)
 
     def __contains__(self, key):
         return self.values.has_key(key)
