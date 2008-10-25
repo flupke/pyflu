@@ -170,7 +170,7 @@ class OptionsList(object):
         """
         option = self.by_long[key]
         if option.takes_value:
-            return self.values[key]
+            return self.values.get(key, None)
         if self.values.has_key(key):
             return True
         return False
