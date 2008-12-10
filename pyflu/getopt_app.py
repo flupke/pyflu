@@ -28,6 +28,7 @@ False
 import os.path
 from getopt import gnu_getopt as getopt, GetoptError
 import textwrap
+import sys
 
 
 class GetoptAppException(Exception): pass
@@ -41,13 +42,14 @@ class Option(object):
     """Stores the description of a getopt option"""
 
     def __init__(self, long, short, takes_value, desc, required=False,
-            default=None):
+            default=None, multiple=False):
         self.short = short
         self.long = long
         self.takes_value = takes_value
         self.desc = desc
         self.required = required
         self.default = default
+        self.multiple = multiple
 
     def short_getopt(self):
         if not self.short:
@@ -99,6 +101,8 @@ class OptionsList(object):
                 self.required_options.append(option.long)
             if option.default is not None:
                 self.defaults[option.long] = option.default
+            elif option.multiple:
+                self.defaults[option.long] = []
 
     def parse(self, argv):
         # Make the getopt arguments
@@ -114,19 +118,25 @@ class OptionsList(object):
             raise InvalidCommandLine(str(e))
         # Print help if requested
         if ("--help", "") in options:
-            raise HelpPrinted(self.help(argv[0]))
+            print self.help(argv[0])
+            sys.exit(0)
         # Verify number of arguments is correct
         if self.nb_args is not None and len(arguments) != self.nb_args:
-            raise InvalidCommandLine("incorrect number of arguments")
+            print "incorrect number of arguments, use --help to print help"
+            sys.exit(1)
         # Transform the parsed options into a dictionnary mapping long option
         # names to values
         self.values = self.defaults.copy()
         for opt, value in options:
             # Strip the beginning - or --
             if opt.startswith("--"):
-                self.values[opt[2:]] = value
+                key = opt[2:]
             else:
-                self.values[self.by_short[opt[1:]].long] = value
+                key = self.by_short[opt[1:]].long
+            if self.by_long[key].multiple:
+                self.values[key].append(value)
+            else:
+                self.values[key] = value
         # Verify required options were passed
         for option_name in self.required_options:
             if option_name not in self.values:
