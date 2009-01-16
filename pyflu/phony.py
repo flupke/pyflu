@@ -3,6 +3,21 @@ from pyflu.shell_color import colorize
 
 
 __registered_renderers = {}
+__enabled = True
+
+
+def disable():
+    global __enabled
+    __enabled = False
+
+
+def enable():
+    global __enabled
+    __enabled = True
+
+
+def is_enabled():
+    return __enabled
 
 
 def register_renderer(value_type, func):
@@ -11,6 +26,7 @@ def register_renderer(value_type, func):
 
 def log(f, ignore_first=False):
     """A decorator to log function calls"""
+
     def render_value(value):
         value_type = type(value)
         if value_type in __registered_renderers:
@@ -19,11 +35,13 @@ def log(f, ignore_first=False):
         return colorize(repr(value), "yellow")
 
     def _f(*args, **kwargs):
+        if not __enabled:
+            return f(*args, **kwargs)
         if ignore_first:
             a = [render_value(v) for v in args[1:]]
         else:
             a = [render_value(v) for v in args]
-        a += ["%s=%s" % (k, render_value(v)) for k, v in kwargs]
+        a += ["%s=%s" % (k, render_value(v)) for k, v in kwargs.items()]
         res = f(*args, **kwargs)
         print "%s(%s) => %s" % (colorize(f.__name__, "green"), 
                 ", ".join(a), render_value(res))
@@ -54,5 +72,6 @@ class PhonyMetaClass(type):
 
 
 class Phony(object):       
+    """Make your class inherit from this to make its methods phony"""
     __metaclass__ = PhonyMetaClass
 
