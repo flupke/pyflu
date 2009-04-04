@@ -9,6 +9,7 @@ thre options, of which two don't take a value :
 ...         ("debug", "d", False, "Print debug information"),
 ...         ("name", None, True, "Specify a name"),
 ...     ), 
+...     "program description",
 ...     nb_args=1, 
 ... )
 >>> arguments = options.parse(["-p", "--name", "john", "woo"])

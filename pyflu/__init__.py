@@ -4,4 +4,4 @@ A collection of general purpose reusable utilities.
 
 
 def version():
-    return "0.1b"
+    return "0.2"

@@ -7,7 +7,7 @@ import subprocess
 
 
 class Command(object):
-    """Stores a single GRASS command."""
+    """Stores a single shell command."""
 
     error_class = Exception
 
@@ -18,15 +18,32 @@ class Command(object):
         
     def run(self, env=None, stop_on_errors=True):
         stdout = stderr = subprocess.PIPE
-        process = subprocess.Popen([self.cmd], env=env, cwd=self.cwd, 
-                shell=True, stdout=stdout, stderr=stderr)
-        if process.wait():
-            if stop_on_errors:
-                raise self.error_class("command '%s' returned %i" % 
-                        (self.cmd, process.returncode))
+        if subprocess.call([self.cmd], env=env, cwd=self.cwd, 
+                shell=True, stdout=stdout, stderr=stderr) and stop_on_errors:
+            raise self.error_class("command '%s' returned %i" % 
+                    (self.cmd, process.returncode))
 
     def __repr__(self):
         return "<Command: %s>" % self.cmd
 
     def __str__(self):
         return self.cmd
+
+
+def run_script(lines, stop_on_errors=True, pipe_output=False):
+    """Run subprocess commands from a string or a list of strings"""
+    if not isinstance(lines, (list, dict)):
+        lines = [lines]
+    output_data = []
+    for line in lines:
+        if pipe_output:
+            stderr = stdout = subprocess.PIPE
+        else:
+            stderr = stdout = None            
+        proc = subprocess.Popen(line.split(" "), stderr=stderr, stdout=stdout)
+        if pipe_output:
+            output_data.append(proc.communicate())
+        ret = proc.wait()
+        if stop_on_errors and ret != 0:
+            raise Exception("error running '%s', return value %s" % (line, ret))
+    return output_data
