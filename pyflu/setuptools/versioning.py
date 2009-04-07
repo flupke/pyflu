@@ -9,7 +9,7 @@ import shutil
 import re
 
 
-class ReleaseCommand(CommandBase):
+class SVNReleaseCommand(CommandBase):
     user_options = [
             ("svn", None, "make a subversion snapshot"),
             ("release", None, "make a normal release"),
@@ -102,10 +102,42 @@ class ReleaseCommand(CommandBase):
         """
         Write the version to a release export.
 
-        This implementations writes a simple version() function at the end of 
-        'name/__init__.py'.
+        This implementations writes a simple version() function at the end the
+        file pointed by self.version_path.
         """
         path = join(dst_dir, self.version_path)
         f = open(path, "a")
         f.write("\ndef version(): return %s\n" % repr(version))
         f.close()
+
+
+class GitReleaseCommand(CommandBase):
+    user_options = [
+            ("version=", None, "version name"),
+            ("name=", None, "base name"),
+            ("git-executable=", None, "git executable path"),
+            ("gzip-executable=", None, "gzip executable path"),
+        ]
+    defaults = {
+            "version": None,
+            "name": None,
+            "git_executable": "/usr/bin/git",
+            "gzip_executable": "/usr/bin/gzip",
+        }
+
+    def finalize_options(self):
+        if self.version is None:
+            raise ValueError("--version is required")
+        if self.name is None:
+            raise ValueError("--name is required")
+
+    def run(self):
+        archive_name = "%s-%s" % (self.name, self.version)
+        try:
+            os.mkdir("dist")
+        except OSError:
+            pass
+        run_script(
+                "%s archive --format=tar --prefix=%s/ HEAD | %s > dist/%s" % 
+                (self.git_executable, archive_name, self.gzip_executable, 
+                    "%s.tar.gz" % archive_name))
