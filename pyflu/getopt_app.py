@@ -165,7 +165,7 @@ class OptionsList(object):
             nl_sep = " " * max_options_len
             text = options_text[i] + sep + option.desc
             if option.default is not None:
-                text += " (default: %s)" % option.default
+                text += " [default: %s]" % option.default
             options_text[i] = "\n".join(textwrap.wrap(text, 
                 subsequent_indent=nl_sep))
         return "%s\n%s\nOptions:\n%s\n" % (self.description, 
