@@ -2,6 +2,7 @@ from pyflu.modules import deep_import
 from pyflu.setuptools.base import CommandBase
 import os
 from os.path import splitext, join, getmtime
+import inspect
 
 
 class CompilePyQtCommand(CommandBase):
