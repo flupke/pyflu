@@ -57,25 +57,39 @@ class PatchFile(object):
                         self.tar.add(item_path, 
                                 self.plain_path(sub_dir, item))
 
-    def patch(self, old_dir, dest_dir):
+    def patch(self, old_dir, dest_dir, start_callback=None, 
+            progress_callback=None):
         """
         Apply the patch to the contents of ``old_dir`` and write the results in
         ``dest_dir``.
         """
+        # Patch files
+        if start_callback is not None:
+            length = 0
+            for base, dirs, files in os.walk(old_dir):
+                length += len(files)
+            start_callback(stage="patch", length=length)  
+        index = 0
         for base, dirs, files in os.walk(old_dir):
             sub_dir = self.sub_path(base, old_dir)
             dest_sub_dir = join(dest_dir, sub_dir)
             # Make directory if it does not exists yet
             if not isdir(dest_sub_dir):
                 os.makedirs(dest_sub_dir)
-            # Patch files
             for file in files:
                 self.patch_file(join(base, file), join(dest_sub_dir, file),
                         self.patch_path(sub_dir, file))
+                if progress_callback is not None:
+                    index += 1
+                    progress_callback(index=index)
+                
         # Extract plain files
         plain_files = [m for m in self.tar.getmembers() 
                 if m.name.startswith(self.plain_prefix)
                 and not m.isdir()]
+        if start_callback is not None:
+            start_callback(stage="plain", length=len(plain_files))
+        index = 0
         for file in plain_files:
             outpath = join(dest_dir, 
                     self.sub_path(file.name, self.plain_prefix))
@@ -89,6 +103,9 @@ class PatchFile(object):
                 if not data:
                     break
                 outfile.write(data)
+            if progress_callback is not None:
+                index += 1
+                progress_callback(index=index)
 
     def store_diff(self, tar_path, old_file, new_file):
         """
@@ -173,11 +190,27 @@ def diff(patch_file, old_dir, new_dir):
     patch.diff(old_dir, new_dir)
 
 
-def patch(patch_file, old_dir, dest_dir):
-    """Patch a directory with contents of ``patch_file``"""
+def patch(patch_file, old_dir, dest_dir, start_callback=None,
+        progress_callback=None):
+    """
+    Patch ``old_dir`` with ``patch_file`` into ``dest_dir``.
+
+    Optional arguments ``start_callback`` and ``progress_callback`` can be
+    specified to handle notifications of progress.
+    
+    ``start_callback`` must be a callable taking the keyword arguments
+    ``stage`` and ``length``, it will be called at each stage of the patching
+    process. The patching process consists of two stages : "patch" where
+    existing files are patched and "plain" where new files are extracted. The
+    ``length`` argument indicates how many files are going to be processed.
+    
+    ``progress_callback`` is a callable taking a single keyword argument,
+    ``index`` wich indicates the progression of each stage (takes values
+    between 1 and ``length``).    
+    """
     tar = tarfile.open(patch_file, "r:bz2")
     patch = PatchFile(tar)
-    patch.patch(old_dir, dest_dir)
+    patch.patch(old_dir, dest_dir, start_callback, progress_callback)
 
 
 def usage():

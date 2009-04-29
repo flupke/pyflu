@@ -110,34 +110,3 @@ class SVNReleaseCommand(CommandBase):
         f.write("\ndef version(): return %s\n" % repr(version))
         f.close()
 
-
-class GitReleaseCommand(CommandBase):
-    user_options = [
-            ("version=", None, "version name"),
-            ("name=", None, "base name"),
-            ("git-executable=", None, "git executable path"),
-            ("gzip-executable=", None, "gzip executable path"),
-        ]
-    defaults = {
-            "version": None,
-            "name": None,
-            "git_executable": "/usr/bin/git",
-            "gzip_executable": "/usr/bin/gzip",
-        }
-
-    def finalize_options(self):
-        if self.version is None:
-            raise ValueError("--version is required")
-        if self.name is None:
-            raise ValueError("--name is required")
-
-    def run(self):
-        archive_name = "%s-%s" % (self.name, self.version)
-        try:
-            os.mkdir("dist")
-        except OSError:
-            pass
-        run_script(
-                "%s archive --format=tar --prefix=%s/ HEAD | %s > dist/%s" % 
-                (self.git_executable, archive_name, self.gzip_executable, 
-                    "%s.tar.gz" % archive_name))

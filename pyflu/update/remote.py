@@ -5,17 +5,21 @@ from os.path import join, basename
 from pyflu.update.version import Version
 
 
-def updates_urls(url, updates_pattern):
+def patches_chain(url, updates_pattern):
     """
-    Retrieves the update links from an HTML page.
+    Retrieves the list of _consecutive_ patches on an HTML page.
     
     The links are parsed from the HTML page found at ``url``. Links not
     matching the regular expression ``updates_pattern`` are filtered.
-    ``updates_pattern`` must define a group named 'version'.
+    ``updates_pattern`` must define two groups named 'from' and 'to', isolating
+    the versions numbers of the update.
 
-    Returns a list of tuples containing a Version object and the full URL for
-    each update link, sorted by version, from the more recent to the oldest.
+    Returns a list of tuples containing 'from' and 'to' versions and the update
+    file URL.
+
+    A ValueError is raised if the chain of versions is not continuous. 
     """
+    # Get links
     parser = etree.HTMLParser()
     doc = etree.parse(urllib2.urlopen(url), parser)
     updates_pattern = re.compile(updates_pattern)
@@ -25,6 +29,21 @@ def updates_urls(url, updates_pattern):
         filename = basename(href)
         match = updates_pattern.match(filename)
         if match:
-            updates.append(Version(match.group("version")), href)
+            updates.append((
+                Version(match.group("from")), 
+                Version(match.group("to")), 
+                href))
+    # Verify updates chain continuity
     updates.sort(key=lambda x: x[0], reverse=True)
+    last_version = None
+    missing_updates = []
+    for from_version, to_version, url in updates:
+        if last_version is None:
+            last_version = to_version
+        else:
+            if from_version != last_version:
+                missing_updates.append((last_version, from_version))
+    if missing_updates:
+        raise ValueError("missing udpates:\n%s" % 
+                "\n".join(["%s => %s" % (f, t) for f, t in missing_updates]))
     return updates

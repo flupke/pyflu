@@ -30,7 +30,7 @@ class Command(object):
         return self.cmd
 
 
-def run_script(lines, stop_on_errors=True, pipe_output=False):
+def run_script(lines, stop_on_errors=True, pipe_output=False, echo=False):
     """Run subprocess commands from a string or a list of strings"""
     if not isinstance(lines, (list, dict)):
         lines = [lines]
@@ -39,7 +39,9 @@ def run_script(lines, stop_on_errors=True, pipe_output=False):
         if pipe_output:
             stderr = stdout = subprocess.PIPE
         else:
-            stderr = stdout = None            
+            stderr = stdout = None
+        if echo:
+            print line
         proc = subprocess.Popen(line.split(" "), stderr=stderr, stdout=stdout)
         if pipe_output:
             output_data.append(proc.communicate())
