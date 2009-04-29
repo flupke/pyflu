@@ -1,0 +1,92 @@
+from pyflu.setuptools.base import CommandBase
+import os
+from os.path import join, isdir
+from pyflu.command import run_script
+import pysvn
+
+
+def svn_info(path="."):
+    client = pysvn.Client()
+    url = client.info(path).url
+    info = client.info2(url, recurse=False)[0][1]
+    return url, info.rev.number
+
+
+class CreatePatchCommand(CommandBase):
+    """Command to create py2exe and py2app patches"""
+
+    user_options = [
+            ("from-version=", None, "From version. Defaults to the last "
+                "version found in the patches cache."),
+            ("to-version=", None, "To version. Defaults to the latest "
+                "subversion release"),
+            ("py2exe", "w", "Compile versions using this setup's py2exe "
+                "command."),
+            ("py2app", "m", "Compile versions using this setup's py2app "
+                "command."),
+            ("patches-dir=", None, "Directory to store versions used to "
+                "construct patches."),
+        ]
+
+    defaults = {
+            "py2exe": False,
+            "py2app": False,
+            "patches_dir": "./patches-cache",
+            "from_version": None,
+            "to_version": None,
+        }
+
+    boolean_options = ["py2exe", "py2app"]
+
+    subdirs = {
+            "svn": "svn",
+        }
+
+    def finalize_options(self):
+        if self.py2exe == self.py2app:
+            raise Exception("you must specify either --py2app or --py2exe")
+        for name, value in self.subdirs.items():
+            setattr(self, "%s_subdir" % name, join(self.patches_dir, value))
+        # Get from_version from the patches cache if no revision was specified
+        if not self.from_version:
+            if not isdir(self.svn_subdir):
+                raise Exception("no patches cache found, --from-version must "
+                        "be specified")
+            versions = [d for d in os.listdir(self.svn_subdir) if isdir(d)]
+            versions.sort(key=lambda x: int(x))
+            self.from_version = versions[-1]
+        # Get to_version from the HEAD subversion revision number if it was not
+        # specified
+        self.svn_url, self.head_rev = svn_info()
+        if not self.to_version:
+            self.to_version = str(self.head_rev)
+
+    def run(self):
+        # Prepare directories structure
+        svn_from_dir = join(self.svn_subdir, self.from_version)
+        frozen_from_dir = join(svn_from_dir, "dist")
+        if not isdir(svn_from_dir):
+            self.export(self.from_version)
+        if not isdir(frozen_from_dir):
+            self.build(svn_from_dir)
+            
+    def export(self, revision):
+        print "exporting revision %s" % revision
+        dest_path = join(self.svn_subdir, revision)
+        client = pysvn.Client()
+        client.export(self.svn_url, dest_path,
+                revision=self.rev_object(revision))
+
+    def build(self, dir):
+        run_script("python %s %s" % (join(dir, "setup.py"),
+            self.freeze_command()), echo=True)
+
+    def rev_object(self, rev):
+        return pysvn.Revision(pysvn.opt_revision_kind.number, int(rev))
+
+    def freeze_command(self):
+        if self.py2exe:
+            return "py2exe"
+        if self.py2app:
+            return "py2app"
+        raise ValueError("internal error")

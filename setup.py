@@ -18,6 +18,8 @@ setup(
     author = "Luper Rouch",
     author_email = "luper.rouch@gmail.com",
 
+    install_requires = ["lxml"],
+
     packages = find_packages(),    
     cmdclass = {
         "release": PyfluReleaseCommand,
