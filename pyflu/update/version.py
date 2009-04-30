@@ -1,5 +1,4 @@
 import re
-from ftoolsupdater.exception import *
 
 
 class Version(object):
@@ -44,7 +43,7 @@ class Version(object):
                 self.snapshot_revision = int(match.group("revision"))
                 self.snapshot_branch = match.group("branch")
             else:
-                raise VersionError("unrecognized version pattern: %s" %
+                raise ValueError("unrecognized version pattern: %s" %
                         version_string)
 
     def __cmp__(self, other):

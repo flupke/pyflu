@@ -1,8 +1,9 @@
-from pyflu.setuptools.base import CommandBase
+from pyflu.setuptools.versioning import VersionCommandBase
 import os
 from os.path import join, isdir
 from pyflu.command import run_script
 import pysvn
+from pyflu.update import diff
 
 
 def svn_info(path="."):
@@ -12,7 +13,7 @@ def svn_info(path="."):
     return url, info.rev.number
 
 
-class CreatePatchCommand(CommandBase):
+class CreatePatchCommand(VersionCommandBase):
     """Command to create py2exe and py2app patches"""
 
     user_options = [
@@ -26,20 +27,25 @@ class CreatePatchCommand(CommandBase):
                 "command."),
             ("patches-dir=", None, "Directory to store versions used to "
                 "construct patches."),
+            ("prefix=", None, "Patch files prefix."),
+            ("suffix=", None, "Patch files suffix."),
         ]
 
     defaults = {
             "py2exe": False,
             "py2app": False,
-            "patches_dir": "./patches-cache",
+            "patches_dir": "patches-cache",
             "from_version": None,
             "to_version": None,
+            "prefix": None,
+            "suffix": ".tar.bz2",
         }
 
     boolean_options = ["py2exe", "py2app"]
 
     subdirs = {
             "svn": "svn",
+            "patches": "patches",
         }
 
     def finalize_options(self):
@@ -47,6 +53,8 @@ class CreatePatchCommand(CommandBase):
             raise Exception("you must specify either --py2app or --py2exe")
         for name, value in self.subdirs.items():
             setattr(self, "%s_subdir" % name, join(self.patches_dir, value))
+        if not self.prefix:
+            raise Exception("you must specify a --prefix for patch files")
         # Get from_version from the patches cache if no revision was specified
         if not self.from_version:
             if not isdir(self.svn_subdir):
@@ -62,24 +70,38 @@ class CreatePatchCommand(CommandBase):
             self.to_version = str(self.head_rev)
 
     def run(self):
-        # Prepare directories structure
-        svn_from_dir = join(self.svn_subdir, self.from_version)
-        frozen_from_dir = join(svn_from_dir, "dist")
-        if not isdir(svn_from_dir):
-            self.export(self.from_version)
-        if not isdir(frozen_from_dir):
-            self.build(svn_from_dir)
+        old_path = self.prepare_image(self.from_version)
+        new_path = self.prepare_image(self.to_version)
+        print "creating patch"
+        if not isdir(self.patches_subdir):
+            os.mkdir(self.patches_subdir)
+        diff(join(self.patches_subdir, "%s-r%s-r%s%s" % (self.prefix,
+            self.from_version, self.to_version, self.suffix)), old_path,
+            new_path)
+
+    def prepare_image(self, version):
+        svn_dir = join(self.svn_subdir, version)
+        frozen_dir = join(svn_dir, "dist")
+        if not isdir(svn_dir):
+            self.export(version)
+            self.write_version(svn_dir, "r%s" % version)
+        if not isdir(frozen_dir):
+            self.build(svn_dir)
+        return frozen_dir
             
     def export(self, revision):
         print "exporting revision %s" % revision
+        # Export from svn repository
         dest_path = join(self.svn_subdir, revision)
         client = pysvn.Client()
         client.export(self.svn_url, dest_path,
                 revision=self.rev_object(revision))
+        # Write version number
+
 
     def build(self, dir):
-        run_script("python %s %s" % (join(dir, "setup.py"),
-            self.freeze_command()), echo=True)
+        run_script("python setup.py %s" % self.freeze_command(), echo=True, 
+                cwd=dir)
 
     def rev_object(self, rev):
         return pysvn.Revision(pysvn.opt_revision_kind.number, int(rev))

@@ -9,7 +9,33 @@ import shutil
 import re
 
 
-class SVNReleaseCommand(CommandBase):
+class VersionCommandBase(CommandBase):
+    """
+    Base class for commands that manipulate version.
+    """
+
+    user_options = [
+            ("version-path=", None, "path of the file containing the "
+                "version() function, relative to --from-path"),
+        ]
+    defaults = {
+            "version_path": None,
+        }
+
+    def write_version(self, dst_dir, version):
+        """
+        Write the version to a release export.
+
+        This implementations writes a simple version() function at the end the
+        file pointed by self.version_path.
+        """
+        path = join(dst_dir, self.version_path)
+        f = open(path, "a")
+        f.write("\ndef version(): return %s\n" % repr(version))
+        f.close()
+    
+
+class SVNReleaseCommand(VersionCommandBase):
     user_options = [
             ("svn", None, "make a subversion snapshot"),
             ("release", None, "make a normal release"),
@@ -19,8 +45,6 @@ class SVNReleaseCommand(CommandBase):
             ("name=", None, "name of the release"),
             ("svn-executable=", None, "path to the subversion executable"),
             ("version=", None, "version to use for normal releases"),
-            ("version-path=", None, "path of the file containing the version() "
-                "function, relative to --from-path"),
             ("copy-to=", None, "copy the resulting archive to the given "
                 "path with scp"),
         ]
@@ -34,7 +58,6 @@ class SVNReleaseCommand(CommandBase):
             "name": None,
             "svn_executable": "/usr/bin/svn",
             "version": None,
-            "version_path": None,
             "copy_to": None
         }
 
@@ -97,16 +120,4 @@ class SVNReleaseCommand(CommandBase):
                 run_script("scp %s %s" % (tar_path, self.copy_to))
         finally:
             shutil.rmtree(work_dir)
-
-    def write_version(self, dst_dir, version):
-        """
-        Write the version to a release export.
-
-        This implementations writes a simple version() function at the end the
-        file pointed by self.version_path.
-        """
-        path = join(dst_dir, self.version_path)
-        f = open(path, "a")
-        f.write("\ndef version(): return %s\n" % repr(version))
-        f.close()
 
