@@ -20,6 +20,9 @@ def patches_chain(url, updates_pattern):
 
     A ValueError is raised if the chain of versions is not continuous. 
     """
+    # Make sure the url has a trailing slash
+    if not url.endswith("/"):
+        url += "/"
     # Get links
     parser = etree.HTMLParser()
     doc = etree.parse(urllib2.urlopen(url), parser)
