@@ -14,7 +14,9 @@ def svn_info(path="."):
 
 
 class CreatePatchCommand(VersionCommandBase):
-    """Command to create py2exe and py2app patches"""
+    """
+    Command to create py2exe and py2app patches from subversion checkouts.
+    """
 
     user_options = [
             ("from-version=", None, "From version. Defaults to the last "
@@ -91,13 +93,10 @@ class CreatePatchCommand(VersionCommandBase):
             
     def export(self, revision):
         print "exporting revision %s" % revision
-        # Export from svn repository
         dest_path = join(self.svn_subdir, revision)
         client = pysvn.Client()
         client.export(self.svn_url, dest_path,
                 revision=self.rev_object(revision))
-        # Write version number
-
 
     def build(self, dir):
         run_script("python setup.py %s" % self.freeze_command(), echo=True, 
