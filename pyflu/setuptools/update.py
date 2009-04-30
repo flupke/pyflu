@@ -62,7 +62,8 @@ class CreatePatchCommand(VersionCommandBase):
             if not isdir(self.svn_subdir):
                 raise Exception("no patches cache found, --from-version must "
                         "be specified")
-            versions = [d for d in os.listdir(self.svn_subdir) if isdir(d)]
+            versions = [d for d in os.listdir(self.svn_subdir) 
+                    if isdir(join(self.svn_subdir, d))]
             versions.sort(key=lambda x: int(x))
             self.from_version = versions[-1]
         # Get to_version from the HEAD subversion revision number if it was not
