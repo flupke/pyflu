@@ -3,6 +3,7 @@ import re
 from lxml import etree
 from os.path import join, basename
 from pyflu.update.version import Version
+from urlparse import urljoin
 
 
 def patches_chain(url, updates_pattern):
@@ -25,7 +26,7 @@ def patches_chain(url, updates_pattern):
     updates_pattern = re.compile(updates_pattern)
     updates = []
     for link in doc.iterfind("//a"):
-        href = join(url, link.get("href"))
+        href = urljoin(url, link.get("href"))
         filename = basename(href)
         match = updates_pattern.match(filename)
         if match:
@@ -38,11 +39,10 @@ def patches_chain(url, updates_pattern):
     last_version = None
     missing_updates = []
     for from_version, to_version, url in updates:
-        if last_version is None:
-            last_version = to_version
-        else:
+        if last_version is not None:
             if from_version != last_version:
                 missing_updates.append((last_version, from_version))
+        last_version = to_version
     if missing_updates:
         raise ValueError("missing udpates:\n%s" % 
                 "\n".join(["%s => %s" % (f, t) for f, t in missing_updates]))
