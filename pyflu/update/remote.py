@@ -38,7 +38,7 @@ def patches_chain(url, updates_pattern):
                 Version(match.group("to")), 
                 href))
     # Verify updates chain continuity
-    updates.sort(key=lambda x: x[0], reverse=True)
+    updates.sort(key=lambda x: x[0])
     last_version = None
     missing_updates = []
     for from_version, to_version, url in updates:
