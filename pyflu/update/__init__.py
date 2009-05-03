@@ -181,12 +181,15 @@ class PatchFile(object):
     def sub_path(self, path, parent):
         return path[len(commonprefix((path, parent))) + 1:]
 
-    def patch_path(self, path, file):
-        ret = join(self.patches_prefix, path, file)
+    def archive_path(self, prefix, path, file):
+        ret = join(prefix, path, file)
         return ret.replace("\\", "/").replace("//", "/")
 
+    def patch_path(self, path, file):
+        return self.archive_path(self.patches_prefix, path, file)
+
     def plain_path(self, path, file):
-        return join(self.plain_prefix, path, file)
+        return self.archive_path(self.plain_prefix, path, file)
 
 
 def diff(patch_file, old_dir, new_dir):
