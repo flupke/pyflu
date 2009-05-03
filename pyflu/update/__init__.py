@@ -103,6 +103,7 @@ class PatchFile(object):
                 if not data:
                     break
                 outfile.write(data)
+            outfile.close()
             if progress_callback is not None:
                 index += 1
                 progress_callback(index=index)
@@ -156,6 +157,9 @@ class PatchFile(object):
         # Construct new file
         dest.write(bsdiff.Patch(orig.read(), new_content_len, 
             ctrl, diff_block, extra_block))
+        # Close files
+        orig.close()
+        dest.close()
 
     def block_fmt(self, data):
         """Returns the struct format string for a data block"""
@@ -178,7 +182,8 @@ class PatchFile(object):
         return path[len(commonprefix((path, parent))) + 1:]
 
     def patch_path(self, path, file):
-        return join(self.patches_prefix, path, file)
+        ret = join(self.patches_prefix, path, file)
+        return ret.replace("\\", "/").replace("//", "/")
 
     def plain_path(self, path, file):
         return join(self.plain_prefix, path, file)
