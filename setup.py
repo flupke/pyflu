@@ -29,7 +29,10 @@ The ``update`` package depends on bsdiff_. Ubuntu users can find it in the
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
 
+    setup_requires = ["nose"],
     install_requires = ["lxml"],
 
     packages = find_packages(),    
+
+    test_suite = "nose.collector",
 )

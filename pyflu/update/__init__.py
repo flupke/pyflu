@@ -1,11 +1,61 @@
 import sys
 import os
+import hashlib
 from os.path import join, commonprefix, isfile, isdir, dirname
 import bsdiff
 import tarfile
 import pickle
 import struct
 from StringIO import StringIO
+
+
+__version__ = "0.1"
+
+
+class UpdateError(Exception): pass
+
+class InvalidFile(UpdateError): 
+    def __init__(self, path):
+        self.path = path
+    def __str__(self):
+        return "'%s'" % self.path
+
+class InvalidOriginalFile(InvalidFile): pass
+class InvalidResultingFile(InvalidFile): pass
+class IncompatiblePatchFormat(UpdateError): pass
+
+
+class PatchInfo(object):
+
+    def __init__(self):
+        self.control_sums = {}
+        self.version = __version__
+
+    def store_sums(self, path, orig_file, new_file):
+        """Store control sums of original and new files"""
+        self.control_sums[path] = (control_sum(orig_file),
+                control_sum(new_file))
+
+    def valid_orig(self, path, file):
+        """
+        Returns True if ``file`` has the same control sum as the original 
+        file stored under ``path`` in this patch info object.
+        """
+        return self.control_sums[path][0] == control_sum(file)
+
+    def valid_result(self, path, file):
+        """
+        Returns True if ``file`` has the same control sum as the new 
+        file stored under ``path`` in this patch info object.
+        """
+        return self.control_sums[path][1] == control_sum(file)
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        if self.version != __version__:
+            raise IncompatiblePatchFormat("patch file has version '%s', "
+                    "the library can read version '%s'" % 
+                    (self.version, __version__))
 
 
 class PatchFile(object):
@@ -18,6 +68,7 @@ class PatchFile(object):
     
     patches_prefix = "patches"
     plain_prefix = "plain"
+    info_path = "info"
 
     header_fmt = "<q"
     block_header_fmt = "<q"
@@ -30,8 +81,11 @@ class PatchFile(object):
         """
         Fill the TarFile with the differences between two directories.
         """
+        self.info = PatchInfo()
+
+        # Write patches and plain files
         for base, dirs, files in os.walk(old_dir):
-            sub_dir = self.sub_path(base, old_dir)
+            sub_dir = sub_path(base, old_dir)
             new_sub_dir = join(new_dir, sub_dir)    
             if not os.path.isdir(new_sub_dir):
                 # Directory not present in the new version, simply don't 
@@ -57,12 +111,21 @@ class PatchFile(object):
                         self.tar.add(item_path, 
                                 self.plain_path(sub_dir, item))
 
+        # Write info file
+        data = pickle.dumps(self.info)
+        info = tarfile.TarInfo(self.info_path)
+        info.size = len(data)
+        self.tar.addfile(info, StringIO(data))
+
     def patch(self, old_dir, dest_dir, start_callback=None, 
             progress_callback=None):
         """
         Apply the patch to the contents of ``old_dir`` and write the results in
         ``dest_dir``.
         """
+        # Read info file
+        self.info = pickle.load(self.tar.extractfile(self.info_path))
+
         # Patch files
         if start_callback is not None:
             length = 0
@@ -71,7 +134,7 @@ class PatchFile(object):
             start_callback(stage="patch", length=length)  
         index = 0
         for base, dirs, files in os.walk(old_dir):
-            sub_dir = self.sub_path(base, old_dir)
+            sub_dir = sub_path(base, old_dir)
             dest_sub_dir = join(dest_dir, sub_dir)
             # Make directory if it does not exists yet
             if not isdir(dest_sub_dir):
@@ -82,7 +145,7 @@ class PatchFile(object):
                 if progress_callback is not None:
                     index += 1
                     progress_callback(index=index)
-                
+
         # Extract plain files
         plain_files = [m for m in self.tar.getmembers() 
                 if m.name.startswith(self.plain_prefix)
@@ -92,7 +155,7 @@ class PatchFile(object):
         index = 0
         for file in plain_files:
             outpath = join(dest_dir, 
-                    self.sub_path(file.name, self.plain_prefix))
+                    sub_path(file.name, self.plain_prefix))
             outdir = dirname(outpath)
             if not isdir(outdir):
                 os.makedirs(outdir)
@@ -115,17 +178,22 @@ class PatchFile(object):
         The patch is stored in the TarFile object at ``tar_path``, and
         is constructed from the contents of the files ``old_file`` and
         ``new_file``.
+
+        The sums dictionnary is also updated.
         """
+        # Compute files sums
+        self.info.store_sums(tar_path, old_file, new_file)
         # Compute files diff
         old_content = open(old_file, "rb").read()
         new_content = open(new_file, "rb").read()
         ctrl, diff_block, extra_block = bsdiff.Diff(old_content, new_content)
         ctrl_block = pickle.dumps(ctrl)
-        # Write header
+        # Prepare struct format
         fmt = self.header_fmt
         fmt += self.block_fmt(ctrl_block)
         fmt += self.block_fmt(diff_block)
         fmt += self.block_fmt(extra_block)
+        # Pack data and write it to the TarFile
         data = struct.pack(fmt, 
                 len(new_content), 
                 len(ctrl_block), ctrl_block,
@@ -142,6 +210,10 @@ class PatchFile(object):
         Patches the file at ``orig_path`` into ``dest_path`` with patch info
         stored in the TarFile at ``patch_path``.
         """
+        # First check file to be patched
+        if not self.info.valid_orig(patch_path, orig_path):
+            raise InvalidOriginalFile(orig_path)
+        # Open files
         orig = open(orig_path, "rb")
         dest = open(dest_path, "wb")
         patch_data = self.tar.extractfile(patch_path).read()
@@ -156,10 +228,13 @@ class PatchFile(object):
         offset, extra_block = self.read_block(patch_data, offset)
         # Construct new file
         dest.write(bsdiff.Patch(orig.read(), new_content_len, 
-            ctrl, diff_block, extra_block))
+                ctrl, diff_block, extra_block))
         # Close files
-        orig.close()
         dest.close()
+        orig.close()
+        # Check resulting file validity
+        if not self.info.valid_result(patch_path, dest_path):
+            raise InvalidResultingFile(dest_path)
 
     def block_fmt(self, data):
         """Returns the struct format string for a data block"""
@@ -178,24 +253,22 @@ class PatchFile(object):
 
     # Utilities 
 
-    def sub_path(self, path, parent):
-        return path[len(commonprefix((path, parent))) + 1:]
-
-    def archive_path(self, prefix, path, file):
-        ret = join(prefix, path, file)
-        return ret.replace("\\", "/").replace("//", "/")
-
     def patch_path(self, path, file):
-        return self.archive_path(self.patches_prefix, path, file)
+        return archive_path(self.patches_prefix, path, file)
 
     def plain_path(self, path, file):
-        return self.archive_path(self.plain_prefix, path, file)
+        return archive_path(self.plain_prefix, path, file)
 
 
 def diff(patch_file, old_dir, new_dir):
+    """
+    Create a patch file storing the differences between ``old_dir`` and
+    ``new_dir``.
+    """
     tar = tarfile.open(patch_file, "w:bz2")
     patch = PatchFile(tar)
     patch.diff(old_dir, new_dir)
+    tar.close()
 
 
 def patch(patch_file, old_dir, dest_dir, start_callback=None,
@@ -219,6 +292,34 @@ def patch(patch_file, old_dir, dest_dir, start_callback=None,
     tar = tarfile.open(patch_file, "r:bz2")
     patch = PatchFile(tar)
     patch.patch(old_dir, dest_dir, start_callback, progress_callback)
+    tar.close()
+
+
+def sub_path(path, parent):
+    """Returns the portion of ``path`` that lies under ``parent``"""
+    return path[len(commonprefix((path, parent))) + 1:]
+
+
+def archive_path(prefix, path, file):
+    """
+    Returns a path in an archive, formed by concatenating ``prefix``,
+    ``path`` and ``file``.
+    """
+    ret = join(prefix, path, file)
+    return ret.replace("\\", "/").replace("//", "/")
+
+
+def control_sum(fpath):
+    """Returns the control sum of the file at ``fpath``"""
+    f = open(fpath, "rb")
+    digest = hashlib.sha512()
+    while True:
+        buf = f.read(4096)
+        if not buf:
+            break
+        digest.update(buf)
+    f.close()
+    return digest.digest()
 
 
 def usage():
