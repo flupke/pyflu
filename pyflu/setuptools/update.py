@@ -31,6 +31,8 @@ class CreatePatchCommand(VersionCommandBase):
                 "construct patches."),
             ("prefix=", None, "Patch files prefix."),
             ("suffix=", None, "Patch files suffix."),
+            ("patches-root=", None, "Root of the patched content, relative "
+                "to the 'dist' directory of the project."),
         ]
 
     defaults = {
@@ -41,6 +43,7 @@ class CreatePatchCommand(VersionCommandBase):
             "to_version": None,
             "prefix": None,
             "suffix": ".tar.bz2",
+            "patches_root": "",
         }
 
     boolean_options = ["py2exe", "py2app"]
@@ -75,7 +78,7 @@ class CreatePatchCommand(VersionCommandBase):
     def run(self):
         old_path = self.prepare_image(self.from_version)
         new_path = self.prepare_image(self.to_version)
-        print "creating patch"
+        print "creating patch %s > %s" % (self.from_version, self.to_version)
         if not isdir(self.patches_subdir):
             os.mkdir(self.patches_subdir)
         diff(join(self.patches_subdir, "%s-r%s-r%s%s" % (self.prefix,
@@ -90,7 +93,7 @@ class CreatePatchCommand(VersionCommandBase):
             self.write_version(svn_dir, "r%s" % version)
         if not isdir(frozen_dir):
             self.build(svn_dir)
-        return frozen_dir
+        return join(frozen_dir, self.patches_root)
             
     def export(self, revision):
         print "exporting revision %s" % revision
