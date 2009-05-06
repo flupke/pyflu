@@ -6,6 +6,7 @@ import bsdiff
 import tarfile
 import pickle
 import struct
+import shutil
 from StringIO import StringIO
 
 
@@ -49,6 +50,12 @@ class PatchInfo(object):
         file stored under ``path`` in this patch info object.
         """
         return self.control_sums[path][1] == control_sum(file)
+
+    def is_ext_file(self, path):
+        """
+        Returns True if the file at ``path`` is external to the patch.
+        """
+        return path not in self.control_sums
 
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -120,7 +127,7 @@ class PatchFile(object):
     def patch(self, old_dir, dest_dir, start_callback=None, 
             progress_callback=None):
         """
-        Apply the patch to the contents of ``old_dir`` and write the results in
+        Apply the patch to the content of ``old_dir`` and write the results in
         ``dest_dir``.
         """
         # Read info file
@@ -128,6 +135,7 @@ class PatchFile(object):
 
         # Patch files
         if start_callback is not None:
+            # Count source files
             length = 0
             for base, dirs, files in os.walk(old_dir):
                 length += len(files)
@@ -140,8 +148,14 @@ class PatchFile(object):
             if not isdir(dest_sub_dir):
                 os.makedirs(dest_sub_dir)
             for file in files:
-                self.patch_file(join(base, file), join(dest_sub_dir, file),
-                        self.patch_path(sub_dir, file))
+                patch_path = self.patch_path(sub_dir, file)
+                src_file = join(base, file)
+                dst_file = join(dest_sub_dir, file)
+                if self.info.is_ext_file(patch_path):
+                    # File is not in the patch, copy it to the destination dir
+                    shutil.copy(src_file, dst_file)
+                else:
+                    self.patch_file(src_file, dst_file, patch_path)
                 if progress_callback is not None:
                     index += 1
                     progress_callback(index=index)

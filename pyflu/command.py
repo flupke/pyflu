@@ -4,6 +4,7 @@ Object oriented interface to run commands
 
 
 import subprocess
+import os
 
 
 class Command(object):
@@ -31,7 +32,7 @@ class Command(object):
 
 
 def run_script(lines, stop_on_errors=True, pipe_output=False, echo=False,
-        cwd=None):
+        cwd=None, null_output=False):
     """Run subprocess commands from a string or a list of strings"""
     if not isinstance(lines, (list, dict)):
         lines = [lines]
@@ -39,6 +40,8 @@ def run_script(lines, stop_on_errors=True, pipe_output=False, echo=False,
     for line in lines:
         if pipe_output:
             stderr = stdout = subprocess.PIPE
+        elif null_output:
+            stderr = stdout = open(os.devnull, "w")
         else:
             stderr = stdout = None
         if echo:

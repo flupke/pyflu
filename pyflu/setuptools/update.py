@@ -33,6 +33,7 @@ class CreatePatchCommand(VersionCommandBase):
             ("suffix=", None, "Patch files suffix."),
             ("patches-root=", None, "Root of the patched content, relative "
                 "to the 'dist' directory of the project."),
+            ("verbose-freeze", None, "Verbose output."),
         ]
 
     defaults = {
@@ -44,9 +45,10 @@ class CreatePatchCommand(VersionCommandBase):
             "prefix": None,
             "suffix": ".tar.bz2",
             "patches_root": "",
+            "verbose_freeze": False,
         }
 
-    boolean_options = ["py2exe", "py2app"]
+    boolean_options = ["py2exe", "py2app", "verbose_freeze"]
 
     subdirs = {
             "svn": "svn",
@@ -93,6 +95,7 @@ class CreatePatchCommand(VersionCommandBase):
             self.write_version(svn_dir, "r%s" % version)
         if not isdir(frozen_dir):
             self.build(svn_dir)
+        self.clean(frozen_dir)
         return join(frozen_dir, self.patches_root)
             
     def export(self, revision):
@@ -104,7 +107,7 @@ class CreatePatchCommand(VersionCommandBase):
 
     def build(self, dir):
         run_script("python setup.py %s" % self.freeze_command(), echo=True, 
-                cwd=dir)
+                cwd=dir, null_output=not self.verbose_freeze)
 
     def rev_object(self, rev):
         return pysvn.Revision(pysvn.opt_revision_kind.number, int(rev))
@@ -115,3 +118,9 @@ class CreatePatchCommand(VersionCommandBase):
         if self.py2app:
             return "py2app"
         raise ValueError("internal error")
+
+    def clean(self, dir):
+        for base, dirs, files in os.walk(dir):
+            for file in files:
+                if file.endswith(".pyc"):
+                    os.unlink(join(base, file))

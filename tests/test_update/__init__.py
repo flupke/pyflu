@@ -8,6 +8,7 @@ import shutil
 
 data_dir = join(dirname(__file__), "data")
 orig_dir = join(data_dir, "orig")
+orig_with_new_dir = join(data_dir, "orig_with_new")
 bad_orig_dir = join(data_dir, "bad_orig")
 new_dir = join(data_dir, "new")
 tmp_dir = join(data_dir, "tmp")
@@ -53,6 +54,13 @@ def test_basic():
     diff(patch_file, orig_dir, new_dir)
     patch(patch_file, orig_dir, tmp_dir, dummy_start, dummy_progress)
     compare_directories(new_dir, tmp_dir)
+
+
+def test_new_files():
+    diff(patch_file, orig_dir, new_dir)
+    patch(patch_file, orig_with_new_dir, tmp_dir)
+    assert isfile(join(tmp_dir, "new_file"))
+    assert isfile(join(tmp_dir, "new_dir", "new_file_2"))
 
 
 def test_error():
