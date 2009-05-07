@@ -28,6 +28,7 @@ def one_way_compare(d1, d2, visited):
                 continue
             assert isfile(f2)
             assert control_sum(f1) == control_sum(f2)
+            assert os.stat(f1).st_mode == os.stat(f2).st_mode
             visited[sub_file] = None
 
 

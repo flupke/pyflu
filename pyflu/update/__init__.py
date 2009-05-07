@@ -214,7 +214,10 @@ class PatchFile(object):
                 len(diff_block), diff_block, 
                 len(extra_block), extra_block)
         info = tarfile.TarInfo(tar_path)
+        statinfo = os.stat(new_file)
         info.size = len(data)
+        info.mode = statinfo.st_mode
+        info.mtime = statinfo.st_mtime
         self.tar.addfile(info, StringIO(data))
 
     def patch_file(self, orig_path, dest_path, patch_path):
@@ -230,7 +233,8 @@ class PatchFile(object):
         # Open files
         orig = open(orig_path, "rb")
         dest = open(dest_path, "wb")
-        patch_data = self.tar.extractfile(patch_path).read()
+        patch_info = self.tar.getmember(patch_path)        
+        patch_data = self.tar.extractfile(patch_info).read()
         offset = 0
         # Parse patch header
         new_content_len = struct.unpack_from(self.header_fmt, patch_data)[0]
@@ -246,6 +250,8 @@ class PatchFile(object):
         # Close files
         dest.close()
         orig.close()
+        # Restore file's mode
+        os.chmod(dest_path, patch_info.mode)
         # Check resulting file validity
         if not self.info.valid_result(patch_path, dest_path):
             raise InvalidResultingFile(dest_path)
