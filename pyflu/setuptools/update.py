@@ -90,11 +90,12 @@ class CreatePatchCommand(VersionCommandBase):
     def prepare_image(self, version):
         svn_dir = join(self.svn_subdir, version)
         frozen_dir = join(svn_dir, "dist")
+        text_version = "r%s" % version
         if not isdir(svn_dir):
             self.export(version)
-            self.write_version(svn_dir, "r%s" % version)
+            self.write_version(svn_dir, text_version)
         if not isdir(frozen_dir):
-            self.build(svn_dir)
+            self.build(svn_dir, text_version)
         self.clean(frozen_dir)
         return join(frozen_dir, self.patches_root)
             
@@ -105,10 +106,10 @@ class CreatePatchCommand(VersionCommandBase):
         client.export(self.svn_url, dest_path,
                 revision=self.rev_object(revision))
 
-    def build(self, dir):
+    def build(self, dir, version):
         run_script("python setup.py %s" % self.freeze_command(), echo=True, 
                 cwd=dir, null_output=not self.verbose_freeze)
-        self.post_build(dir)
+        self.post_build(dir, version)
 
     def rev_object(self, rev):
         return pysvn.Revision(pysvn.opt_revision_kind.number, int(rev))
@@ -126,5 +127,5 @@ class CreatePatchCommand(VersionCommandBase):
                 if file.endswith(".pyc"):
                     os.unlink(join(base, file))
 
-    def post_build(self, dir):
+    def post_build(self, dir, version):
         pass

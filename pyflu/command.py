@@ -5,6 +5,7 @@ Object oriented interface to run commands
 
 import subprocess
 import os
+import shlex
 
 
 class Command(object):
@@ -46,7 +47,7 @@ def run_script(lines, stop_on_errors=True, pipe_output=False, echo=False,
             stderr = stdout = None
         if echo:
             print line
-        proc = subprocess.Popen(line.split(" "), stderr=stderr, stdout=stdout,
+        proc = subprocess.Popen(shlex.split(line), stderr=stderr, stdout=stdout,
                 cwd=cwd)
         if pipe_output:
             output_data.append(proc.communicate())
