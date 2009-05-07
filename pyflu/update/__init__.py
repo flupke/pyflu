@@ -2,6 +2,7 @@ import sys
 import os
 import hashlib
 from os.path import join, commonprefix, isfile, isdir, dirname
+from pyflu.path import sub_path
 import bsdiff
 import tarfile
 import pickle
@@ -313,11 +314,6 @@ def patch(patch_file, old_dir, dest_dir, start_callback=None,
     patch = PatchFile(tar)
     patch.patch(old_dir, dest_dir, start_callback, progress_callback)
     tar.close()
-
-
-def sub_path(path, parent):
-    """Returns the portion of ``path`` that lies under ``parent``"""
-    return path[len(commonprefix((path, parent))) + 1:]
 
 
 def archive_path(prefix, path, file):
