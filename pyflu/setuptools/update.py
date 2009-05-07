@@ -108,6 +108,7 @@ class CreatePatchCommand(VersionCommandBase):
     def build(self, dir):
         run_script("python setup.py %s" % self.freeze_command(), echo=True, 
                 cwd=dir, null_output=not self.verbose_freeze)
+        self.post_build(dir)
 
     def rev_object(self, rev):
         return pysvn.Revision(pysvn.opt_revision_kind.number, int(rev))
@@ -124,3 +125,6 @@ class CreatePatchCommand(VersionCommandBase):
             for file in files:
                 if file.endswith(".pyc"):
                     os.unlink(join(base, file))
+
+    def post_build(self, dir):
+        pass
