@@ -9,8 +9,10 @@ import datetime
 class DateNavigator(object):
 
     def __init__(self, objects, date_field="date", state={}, 
-            state_keys={"year": "year", "month": "month"}):
+            state_keys={"year": "year", "month": "month"},
+            month_formatter=None):
         self.objects = objects
+        self.month_formatter = month_formatter
         self.state = {}
         if state.has_key(state_keys["year"]):
             self.state["year"] = int(state[state_keys["year"]])
@@ -59,7 +61,9 @@ class DateNavigator(object):
             if not month:
                 fmt = "%s=%i&%s=%%i" % (self.state_keys["year"], year,
                         self.state_keys["month"])
-                for month in self.dates[year]["months"]:
+                months = self.dates[year]["months"].keys()
+                months.sort()
+                for month in months:
                     items.append({
                             "get": fmt % month, 
                             "text": self.textual_month(month)
@@ -84,5 +88,7 @@ class DateNavigator(object):
 
     def textual_month(self, month):
         """Transform a month to its textual representation"""
+        if self.month_formatter is not None:
+            return self.month_formatter(month)
         return datetime.date(year=1978, month=month, day=1).strftime("%B")
         
