@@ -1,14 +1,30 @@
 """Utilities for working with python modules"""
 
+import os
+
 
 def deep_import(name):
     """
     A version of __import__ that works as expected when using the form 
-    'module.name' (returns the object corresponding to 'name' in this case,
-    instead of 'module'.
+    'module.name' (returns the object corresponding to 'name', instead of 
+    'module').
     """
     mod = __import__(name)
     components = name.split('.')
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
+
+
+def path_to_name(path, root=None):
+    """
+    Converts a path to a .py file to the corresponding dotted module path.
+
+    If root is given, the module path is relative to root.
+    """
+    if root is not None:
+        path = path[len(os.path.commonprefix((path, root))) + 1:]
+    module_path = path.replace(os.sep, ".")[:-len(".py")]
+    if module_path.endswith(".__init__"):
+        module_path = module_path[:-len(".__init__")]
+    return module_path
