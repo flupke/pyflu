@@ -1,30 +1,10 @@
 """
 An object oriented interface to getopt.
-
-Here is an example for a program that wants exactly one argument and can take
-thre options, of which two don't take a value :
-
->>> options = OptionsList((
-...         ("profile", "p", False, "Do a profiling run"),
-...         ("debug", "d", False, "Print debug information"),
-...         ("name", None, True, "Specify a name"),
-...     ), 
-...     "program description",
-...     nb_args=1, 
-... )
->>> arguments = options.parse(["-p", "--name", "john", "woo"])
->>> arguments[0]
-'woo'
->>> options["p"]
-True
->>> options["profile"]
-True
->>> options["d"]
-False
->>> options["name"]
-'john'
-
 """
+
+import warnings
+warnings.warn(DeprecationWarning("this module was written, then the author discovered "
+        "optparse ..."))
 
 import os.path
 from getopt import gnu_getopt as getopt, GetoptError

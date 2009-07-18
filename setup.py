@@ -33,6 +33,4 @@ The ``update`` package depends on bsdiff_. Ubuntu users can find it in the
     install_requires = ["lxml"],
 
     packages = find_packages(),    
-
-    test_suite = "nose.collector",
 )

@@ -9,10 +9,13 @@ class CompilePyQtCommand(CommandBase):
     user_options = [
             ("create-classes", "c", "create classes skeletons"),
             ("ui-dirs=", "u", "comma separated list of .ui and .qrc folders"),
+            ("output-dir=", "o", "put compiled files in this folder"),
+            ("widgets-dir=", "w", "create widget skeletons in this folder"),
+            ("dialogs-dir=", "d", "create dialog skeletons in this folder"),
+            ("default-dir=", None, "create other skelettons in this folder"),
         ]
     boolean_options = ["create-classes"]
     defaults = {
-            "ui_dirs": "",
             "create_classes": False,
         }
     description = "compile PyQt interface files"
@@ -58,12 +61,12 @@ __all__ = ["%(class_name)s"]
         # Compile
         for folder in self.ui_dirs:
             for infile, name in self.iter_files(folder, ".qrc"):
-                outfile = join(folder, name + "_rc.py")
+                outfile = join(self.output_dir, name + "_rc.py")
                 if not os.path.isfile(outfile) or \
                         getmtime(infile) > getmtime(outfile):
                     self.run_command("pyrcc4 %s -o %s" % (infile, outfile))
             for infile, name in self.iter_files(folder, ".ui"):
-                outfile = join(folder, name + ".py")
+                outfile = join(self.output_dir, name + ".py")
                 if not os.path.isfile(outfile) or \
                         getmtime(infile) > getmtime(outfile):
                     self.run_command("pyuic4 %s -o %s" % (infile, outfile))
@@ -74,13 +77,13 @@ __all__ = ["%(class_name)s"]
             for infile, name in self.iter_files(folder, ".ui"):
                 # Skip if there is already a file defined
                 if name.endswith("_widget"):
-                    target = join(folder, "..", "widgets", 
+                    target = join(self.widgets_dir, 
                             name[:-len("_widget")] + ".py")
                 elif name.endswith("_dialog"):
-                    target = join(folder, "..", "dialogs", 
+                    target = join(self.dialogs_dir, 
                             name[:-len("_dialog")] + ".py")
                 else:
-                    target = join(folder, "..", name + ".py")
+                    target = join(self.default_dir, name + ".py")
                 if os.path.isfile(target):
                     continue
                 # Create class skeleton                
@@ -90,7 +93,7 @@ __all__ = ["%(class_name)s"]
                     qt_base = "QWidget"
                 else:
                     qt_base = self.ask_qt_base(infile)
-                ui_module_path = "%s.%s" % (folder.replace("/", "."), name)
+                ui_module_path = "%s.%s" % (self.output_dir.replace("/", "."), name)
                 ui_module = deep_import(ui_module_path)
                 ui_classes = [x[1] for x in inspect.getmembers(ui_module) if 
                         inspect.isclass(x[1]) and
