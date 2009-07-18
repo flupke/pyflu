@@ -2,6 +2,7 @@
 Various container utilities
 """
 
+
 def get_from_dict(d, path):
     """
     Extract a value pointed by ``path`` from a nested dict.
