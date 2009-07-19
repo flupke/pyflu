@@ -6,13 +6,16 @@ class FIFOBuffer(object):
     A circular FIFO buffer implemented on top of numpy.
     """
 
-    def __init__(self, size, dimensions=1, dtype=np.float32):
+    def __init__(self, size, dimensions=1, dtype=np.float32, filled=False):
         self._cache = np.zeros(size * dimensions, dtype)
         self._values = np.zeros(size * dimensions, dtype)
-        self._ind = 0
         self._size = size
         self._dimensions = dimensions
         self._array_size = size * dimensions
+        if filled:
+            self._ind = self._array_size
+        else:
+            self._ind = 0
         self._cached = False
 
     def add(self, *args):
