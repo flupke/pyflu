@@ -1,17 +1,19 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from pyflu.qt.models.treenode import RenameError, FolderNode
+import pickle
 
 
 class TreeModel(QAbstractItemModel):
     """
-    A base class for tree models using TreeNode.
+    A base class for models using TreeNode based trees.
 
     Implementations must create a member variable named 'root_item' in their
     __init__.
     """
 
     num_columns = 1
+    dnd_mime_type = "text/pickle"
 
     # QAbstractItemModel interface
 
@@ -44,7 +46,7 @@ class TreeModel(QAbstractItemModel):
         return self.createIndex(row, 0, parent_item)
 
     def rowCount(self, parent_index):
-        if parent_index.column() > 0:
+        if parent_index.column() >= self.num_columns:
             return 0
         parent_item = self.item_from_index(parent_index)
         return len(parent_item.children)
@@ -77,24 +79,42 @@ class TreeModel(QAbstractItemModel):
     
     def flags(self, index):         
         flags = QAbstractItemModel.flags(self, index)
-        if index.isValid():
-            item = index.internalPointer()
-            if item.editable:
-                flags |= Qt.ItemIsEditable
+        item = self.item_from_index(index)
+        if item.editable:
+            flags |= Qt.ItemIsEditable
+        if item.draggable:
+            flags |= Qt.ItemIsDragEnabled
+        if item.drop_target:
+            flags |= Qt.ItemIsDropEnabled
         return flags
-    """
-            item_type = type(item.db_object)
-            if item_type is self.model:
-                flags |= Qt.ItemIsDropEnabled | Qt.ItemIsDragEnabled
-            elif item_type in self.draggable_types:
-                flags |= Qt.ItemIsDragEnabled
-        else:
-            # Allow drop on the root item
-            flags |= Qt.ItemIsDropEnabled 
-        return flags
-    """
+
+    # Drag and drop methods
+
+    def supportedDropActions(self):
+        return Qt.MoveAction    
+
+    def mimeTypes(self):
+        return [self.dnd_mime_type]
+
+    def mimeData(self, indices):
+        if not len(indices):
+            return 0
+        data = []
+        for index in indices:
+            if index.isValid():
+                item = index.internalPointer()
+                data.append(item.drag_data())
+        mime_data = QMimeData()
+        mime_data.setData(self.dnd_mime_type, self.dump_drag_data(data))
+        return mime_data                
             
     # Utilities
+
+    def dump_drag_data(self, data):
+        """
+        Create a dump of ``data``, suitable to be inserted in a QMimeData.
+        """
+        return pickle.dumps(data)
 
     def item_from_index(self, index):
         if not index.isValid():

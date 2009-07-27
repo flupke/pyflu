@@ -2,6 +2,7 @@ import os
 from pyflu.translation import ugettext as _
 from pyflu.qt.util import icon_from_res
 import shutil
+import pickle
 
 
 class NodeOperationError(Exception): pass
@@ -14,10 +15,22 @@ class TreeNode(object):
     """
 
     icon = None
+    """A QIcon."""
     ctx_actions = ()
+    """Context menu actions names"""
     editor = None
+    """
+    An object identifying the node's 'editor', used to tell what actions should
+    be taken when the node is double clicked for example.
+    """
     editable = False
+    """Tells wether the node's name can be edited."""
     deletable = False
+    """Tells if the node can be deleted."""
+    draggable = False
+    """Tells if the node can be dragged."""
+    drop_target = False
+    """Tells if the node is a drop target."""
 
     def __init__(self, name=None, parent=None):
         self.children = []
@@ -42,6 +55,9 @@ class TreeNode(object):
 
     def delete(self):
         self.parent.children.remove(self)
+
+    def drag_data(self):
+        return self
 
 
 class FileSystemItemNode(TreeNode):
