@@ -2,6 +2,10 @@
 Widgets to represent and edit base Python types.
 """
 
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+
+
 class NumericTypeWidget(object):
 
     default_minimum = 0
@@ -33,21 +37,24 @@ class IntegerTypeWidget(QSpinBox, NumericTypeWidget):
 
     def __init__(self, min=None, max=None, parent=None):
         QSpinBox.__init__(self, parent)
-        NumericTypeWidget.__init__(self, field)
+        NumericTypeWidget.__init__(self, min, max)
 
 
 class FloatTypeWidget(QDoubleSpinBox, NumericTypeWidget):
 
-    default_maximum = consts.max_spinboxes_float
-    default_minimum = consts.min_spinboxes_float
+    default_maximum = 999.0
+    default_minimum = -999.0
 
     def __init__(self, min=None, max=None, parent=None):
         QDoubleSpinBox.__init__(self, parent)
-        NumericTypeWidget.__init__(self, field)
-        self.setDecimals(consts.float_spinboxes_decimals)
+        NumericTypeWidget.__init__(self, min, max)
+        self.setDecimals(2)
 
 
 class StringTypeWidget(QLineEdit):
+
+    def __init__(self, parent=None):
+        QLineEdit.__init__(self, parent)
 
     def get_value(self):
         return unicode(self.text())
@@ -59,6 +66,9 @@ class StringTypeWidget(QLineEdit):
 
 
 class BooleanTypeWidget(QCheckBox):
+
+    def __init__(self, parent=None):
+        QCheckBox.__init__(self, parent)
 
     def get_value(self):
         return self.isChecked()
@@ -91,8 +101,7 @@ class ChoiceTypeWidget(QComboBox):
     def set_value(self, value):
         index = self.findData(QVariant(value))
         if index == -1:
-            raise ValueError("invalid value '%s' for limited choice field '%s'"
-                    % (value, self.field.name))
+            raise ValueError("invalid value: '%s'" % value)
         self.setCurrentIndex(index)
 
     widget_value = property(get_value, set_value)
@@ -108,6 +117,6 @@ TYPES_WIDGETS = {
 
 def create_type_widget(data_type, choices=None, **kwargs):
     if choices is None:
-        return TYPES_WIDGETS[data_type](field, **kwargs)
+        return TYPES_WIDGETS[data_type](**kwargs)
     else:
         return ChoiceTypeWidget(data_type, choices, **kwargs)

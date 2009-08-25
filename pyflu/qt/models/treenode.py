@@ -9,6 +9,13 @@ class NodeOperationError(Exception): pass
 class RenameError(NodeOperationError): pass
 
 
+class InternalEditor:
+    """
+    This can be used as the ``editor`` attribute for nodes, to indicate that an
+    object must be handled internally.
+    """
+
+
 class TreeNode(object):
     """
     Base implementation for TreeNode objects.
@@ -162,4 +169,4 @@ class DirTreeNode(TreeNode, FolderNodeMixin):
 
 __all__ = ["NodeOperationError", "RenameError", "TreeNode",
         "FileSystemItemNode", "FolderNodeMixin", "FolderNode", "FileNode",
-        "DirTreeNode"]
+        "DirTreeNode", "InternalEditor"]
