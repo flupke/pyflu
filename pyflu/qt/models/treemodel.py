@@ -61,7 +61,8 @@ class TreeModel(QAbstractItemModel):
         if role == Qt.DisplayRole:
             return QVariant(item.name)
         elif role == Qt.DecorationRole:
-            return QVariant(item.icon)
+            if item.icon is not None:
+                return QVariant(item.icon)
         return QVariant()
 
     def setData(self, index, value, role):

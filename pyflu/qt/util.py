@@ -1,5 +1,5 @@
 from os.path import dirname, join
-from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication
+from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, qRgb
 from PyQt4.QtCore import Qt, QSettings, QVariant
 
 
@@ -70,3 +70,7 @@ def get_open_path(parent, settings_path):
     # Remember save location directory
     settings.setValue(settings_path, QVariant(dirname(open_path)))
     return open_path
+
+
+def rgb(r, g, b):
+    return (qRgb(r, g, b) & 0xffffff) - 0x1000000

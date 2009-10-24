@@ -53,6 +53,7 @@ class TreeNode(object):
         else:
             self.children.append(child)
         child.parent = self
+        return child
 
     def child_index(self, child):
         return self.children.index(child)
