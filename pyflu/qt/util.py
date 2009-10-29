@@ -74,3 +74,13 @@ def get_open_path(parent, settings_path):
 
 def rgb(r, g, b):
     return (qRgb(r, g, b) & 0xffffff) - 0x1000000
+
+
+def get_or_create_app(args=None):
+    if args is None:
+        args = []
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(args)
+    return app
+    

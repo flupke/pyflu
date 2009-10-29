@@ -1,6 +1,5 @@
 import os
 from pyflu.translation import ugettext as _
-from pyflu.qt.util import icon_from_res
 import shutil
 import pickle
 
@@ -111,7 +110,6 @@ class FolderNodeMixin(object):
 class FolderNode(FileSystemItemNode, FolderNodeMixin):
     
     ctx_actions = ("rename", "new_folder")
-    icon = icon_from_res(":/images/folder.png")
 
     def __init__(self, path, name, parent=None):
         super(FolderNode, self).__init__(name, parent)
@@ -128,7 +126,6 @@ class FileNode(FileSystemItemNode):
 
     ctx_actions = ("rename",)
     editor = "text"
-    icon = icon_from_res(":/images/file.png")
 
     def __init__(self, path, name, parent=None):
         super(FileNode, self).__init__(name, parent)

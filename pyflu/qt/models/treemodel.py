@@ -17,7 +17,7 @@ class TreeModel(QAbstractItemModel):
 
     # QAbstractItemModel interface
 
-    def index(self, row, column, parent_index):
+    def index(self, row, column, parent_index=QModelIndex()):
         if not self.hasIndex(row, column, parent_index):
             return QModelIndex()
         parent_item = self.item_from_index(parent_index)
