@@ -1,6 +1,6 @@
 from os.path import dirname, join
 from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, qRgb
-from PyQt4.QtCore import Qt, QSettings, QVariant
+from PyQt4.QtCore import Qt, QSettings, QVariant, PYQT_VERSION
 
 
 def icon_from_res(path):
@@ -73,7 +73,9 @@ def get_open_path(parent, settings_path):
 
 
 def rgb(r, g, b):
-    return (qRgb(r, g, b) & 0xffffff) - 0x1000000
+    if PYQT_VERSION <= 263172:
+        return (qRgb(r, g, b) & 0xffffff) - 0x1000000
+    return qRgb(r, g, b)
 
 
 def get_or_create_app(args=None):
