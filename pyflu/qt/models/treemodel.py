@@ -58,7 +58,7 @@ class TreeModel(QAbstractItemModel):
         if not index.isValid():
             return QVariant()
         item = index.internalPointer()
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole or role == Qt.EditRole:
             return QVariant(item.name)
         elif role == Qt.DecorationRole:
             if item.icon is not None:
