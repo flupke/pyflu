@@ -17,8 +17,10 @@ def long_operation(func):
     """
     def f(*args, **kwargs):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
-        res = func(*args, **kwargs)
-        QApplication.restoreOverrideCursor()
+        try:
+            res = func(*args, **kwargs)
+        finally:
+            QApplication.restoreOverrideCursor()
         return res
     return f
 
