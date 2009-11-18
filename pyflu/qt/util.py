@@ -1,5 +1,6 @@
 from os.path import dirname, join
-from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, qRgb
+from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, \
+        qRgb, QDialog
 from PyQt4.QtCore import Qt, QSettings, QVariant, PYQT_VERSION
 
 
@@ -25,7 +26,8 @@ def long_operation(func):
     return f
 
 
-def get_save_path(parent, settings_path, default_filename):
+def get_save_path(parent, settings_path, default_filename=None, 
+        default_suffix=None):
     """
     Shows a 'save' dialog and returns the selected path.
 
@@ -39,12 +41,18 @@ def get_save_path(parent, settings_path, default_filename):
     settings = QSettings()
     last_dir = unicode(settings.value(settings_path, QVariant(u"")).toString())
     # Get save location
-    save_path = QFileDialog.getSaveFileName(parent, 
-            parent.trUtf8("Save as"), 
-            join(last_dir, default_filename))
-    if save_path.isNull():
+    dlg = QFileDialog(parent)
+    dlg.setWindowTitle(parent.trUtf8("Save as"))
+    dlg.setFileMode(QFileDialog.AnyFile)
+    dlg.setAcceptMode(QFileDialog.AcceptSave)
+    dlg.setDirectory(last_dir)
+    if default_suffix is not None:
+        dlg.setDefaultSuffix(default_suffix)
+    if default_filename is not None:
+        dlg.selectFile(default_filename)
+    if dlg.exec_() != QDialog.Accepted:
         return None
-    save_path = unicode(save_path)
+    save_path = unicode(dlg.selectedFiles()[0])
     # Remember save location directory
     settings.setValue(settings_path, QVariant(dirname(save_path)))
     return save_path

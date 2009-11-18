@@ -1,3 +1,4 @@
+from os.path import basename
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *    
 
@@ -7,14 +8,16 @@ class MainWindow(object):
     A mixin class providing basic functionnality for QMainWindow.
     """
 
+    state_setting = "state/main_window"
+
     def restore_state(self):
         settings = QSettings()
-        self.restoreState(settings.value("state/main_window",
+        self.restoreState(settings.value(self.state_setting,
             QVariant(True)).toByteArray())
 
     def save_state(self):
         settings = QSettings()
-        settings.setValue("state/main_window", QVariant(self.saveState()))
+        settings.setValue(self.state_setting, QVariant(self.saveState()))
 
 
 class MdiMainWindow(MainWindow):
@@ -22,10 +25,10 @@ class MdiMainWindow(MainWindow):
     Mixin class for MDI style windows.
     """
     
-    _mdi_area_obj = "mdi_area"
+    mdi_area_obj = "mdi_area"
 
     def closeEvent(self, event):
-        mdi_area = getattr(self, self._mdi_area_obj)
+        mdi_area = getattr(self, self.mdi_area_obj)
         mdi_area.closeAllSubWindows()
         if len(mdi_area.subWindowList()):
             # Some scenes are still opened
@@ -38,3 +41,58 @@ class MdiMainWindow(MainWindow):
             self.save_state()
             event.accept()            
 
+
+class MruMainWindow(object):
+
+    mru_setting = "state/most_recently_used_files"
+    mru_length = 5
+    mru_load_func = None
+
+    def mru_list(self):
+        settings = QSettings()
+        return list(settings.value(self.mru_setting,
+                QVariant(QStringList())).toStringList())
+
+    def set_mru_list(self, value):
+        settings = QSettings()
+        settings.setValue(self.mru_setting, QVariant(value))
+
+    def add_to_mru(self, path):
+        path = unicode(path)
+        mru = self.mru_list()
+        if path not in mru:
+            # path not in mru yet, add it to the beginning
+            mru.insert(0, path)
+        else:
+            # path is already in the mru, swap its position with the newest
+            # entry
+            path_index = mru.index(path)
+            mru[0], mru[path_index] = mru[path_index], mru[0]
+        # Prune oldest entry
+        if len(mru) > self.mru_length:
+            mru.pop(-1)
+        self.set_mru_list(mru)
+
+    def remove_from_mru(self, path):
+        path = unicode(path)
+        mru = self.mru_list()
+        try:
+            mru.remove(path)
+        except ValueError:
+            pass
+        else:
+            self.set_mru_list(mru)
+        
+    def mru_actions(self):
+        ret = []
+        for path in self.mru_list():
+            action = QAction(basename(unicode(path)), self)
+            action.setData(QVariant(path))
+            self.connect(action, SIGNAL("triggered()"), self.open_mru)               
+            ret.append(action)
+        return ret
+
+    def open_mru(self):
+        action = self.sender()
+        path = unicode(action.data().toString())
+        getattr(self, self.mru_load_func)(path)
