@@ -1,6 +1,7 @@
 """Utilities for working with python modules"""
 
 import os
+import types
 
 
 def deep_import(name):
@@ -28,3 +29,15 @@ def path_to_name(path, root=None):
     if module_path.endswith(".__init__"):
         module_path = module_path[:-len(".__init__")]
     return module_path
+
+
+def pprint_func(f):
+    """
+    Nicely prints a function or method name, including the path to it.
+    """
+    if isinstance(f, types.MethodType):
+        cls = f.im_class
+        return "%s.%s.%s" % (cls.__module__, cls.__name__, f.__name__)
+    else:
+        return "%s.%s" % (f.__module__, f.__name__)
+
