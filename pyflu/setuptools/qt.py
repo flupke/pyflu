@@ -1,6 +1,5 @@
 from pyflu.modules import deep_import
 from pyflu.setuptools.base import CommandBase
-from pyflu.path import iter_files
 import os
 from os.path import splitext, join, getmtime
 import inspect
@@ -40,6 +39,13 @@ __all__ = ["%(class_name)s"]
         self.ui_dirs = [x.strip() for x in self.ui_dirs.split(",") 
                 if x.strip()]
 
+    def iter_files(self, folder, target_ext):
+        for file in os.listdir(folder):
+            name, ext = splitext(file)
+            if ext != target_ext:
+                continue
+            yield join(folder, file), name
+
     def run_command(self, cmd):
         print cmd
         os.system(cmd)
@@ -54,12 +60,12 @@ __all__ = ["%(class_name)s"]
     def run(self):
         # Compile
         for folder in self.ui_dirs:
-            for infile, name in iter_files(folder, ".qrc"):
+            for infile, name in self.iter_files(folder, ".qrc"):
                 outfile = join(self.output_dir, name + "_rc.py")
                 if not os.path.isfile(outfile) or \
                         getmtime(infile) > getmtime(outfile):
                     self.run_command("pyrcc4 %s -o %s" % (infile, outfile))
-            for infile, name in iter_files(folder, ".ui"):
+            for infile, name in self.iter_files(folder, ".ui"):
                 outfile = join(self.output_dir, name + ".py")
                 if not os.path.isfile(outfile) or \
                         getmtime(infile) > getmtime(outfile):
@@ -68,7 +74,7 @@ __all__ = ["%(class_name)s"]
         if not self.create_classes:
             return
         for folder in self.ui_dirs:
-            for infile, name in iter_files(folder, ".ui"):
+            for infile, name in self.iter_files(folder, ".ui"):
                 # Skip if there is already a file defined
                 if name.endswith("_widget"):
                     target = join(self.widgets_dir, 

@@ -23,6 +23,8 @@ def path_to_name(path, root=None):
 
     If root is given, the module path is relative to root.
     """
+    if not path.endswith(".py"):
+        raise ValueError("you must give a .py file path")
     if root is not None:
         path = path[len(os.path.commonprefix((path, root))) + 1:]
     module_path = path.replace(os.sep, ".")[:-len(".py")]

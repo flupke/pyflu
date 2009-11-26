@@ -7,6 +7,7 @@ from setuptools import setup, find_packages, Extension
 
 class CompileCythonCommand(CommandBase):
     
+    description = "compile all cython files"
     user_options = [
            ("include=", "I", ".pxi include directories (separated by ',')"),
            ("cplus", None, "compile to c++ (default: False)"),

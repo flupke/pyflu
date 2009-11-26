@@ -68,7 +68,7 @@ class MruMainWindow(object):
             # entry
             path_index = mru.index(path)
             mru[0], mru[path_index] = mru[path_index], mru[0]
-        # Prune oldest entry
+        # Prune oldest entries
         if len(mru) > self.mru_length:
             mru.pop(-1)
         self.set_mru_list(mru)
