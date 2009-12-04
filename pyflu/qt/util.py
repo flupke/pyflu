@@ -1,7 +1,8 @@
 from os.path import dirname, join
 from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, \
-        qRgb, QDialog
+        qRgb, qRgba, QDialog
 from PyQt4.QtCore import Qt, QSettings, QVariant, PYQT_VERSION
+import warnings
 
 
 def icon_from_res(path):
@@ -80,6 +81,13 @@ def get_open_path(parent, settings_path):
     # Remember save location directory
     settings.setValue(settings_path, QVariant(dirname(open_path)))
     return open_path
+
+
+def rgba(r, g, b, a=255):
+    if PYQT_VERSION <= 263172:
+        warnings.warn("using untested qRgba fix")
+        return (qRgba(r, g, b, a) & 0xffffff) - 0x1000000
+    return qRgba(r, g, b, a)
 
 
 def rgb(r, g, b):
