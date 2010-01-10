@@ -9,15 +9,19 @@ class MainWindow(object):
     """
 
     state_setting = "state/main_window"
+    geometry_setting = "state/main_window_geometry"
 
     def restore_state(self):
         settings = QSettings()
         self.restoreState(settings.value(self.state_setting,
             QVariant(True)).toByteArray())
+        self.restoreGeometry(settings.value(self.geometry_setting,
+            QVariant(True)).toByteArray())
 
     def save_state(self):
         settings = QSettings()
         settings.setValue(self.state_setting, QVariant(self.saveState()))
+        settings.setValue(self.geometry_setting, QVariant(self.saveGeometry()))
 
 
 class MdiMainWindow(MainWindow):
@@ -72,6 +76,7 @@ class MruMainWindow(object):
         if len(mru) > self.mru_length:
             mru.pop(-1)
         self.set_mru_list(mru)
+        self.refresh_mru_menu()
 
     def remove_from_mru(self, path):
         path = unicode(path)
@@ -82,6 +87,7 @@ class MruMainWindow(object):
             pass
         else:
             self.set_mru_list(mru)
+        self.refresh_mru_menu()
         
     def mru_actions(self):
         ret = []
@@ -96,3 +102,7 @@ class MruMainWindow(object):
         action = self.sender()
         path = unicode(action.data().toString())
         getattr(self, self.mru_load_func)(path)
+
+    def refresh_mru_menu(self):
+        raise NotImplementedError("subclasses of MruMainWindow must provide "
+                "an implementation of refresh_mru_menu()")

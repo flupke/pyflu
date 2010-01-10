@@ -2,7 +2,7 @@
 QGraphics* utilities.
 """
 
-from PyQt4.QtGui import QGraphicsItem
+from PyQt4.QtGui import QGraphicsItem, QTransform
 
 
 def scene_bbox(item, view=None):
@@ -20,7 +20,10 @@ def scene_bbox(item, view=None):
     else:
         # Item with the ItemIgnoresTransformations flag, need to compute its
         # bounding box with deviceTransform()
-        vp_trans = view.viewportTransform()
+        if view is not None:
+            vp_trans = view.viewportTransform()
+        else:
+            vp_trans = QTransform()
         item_to_vp_trans = item.deviceTransform(vp_trans)
         # Map bbox to viewport space
         bbox = item_to_vp_trans.mapRect(bbox)
