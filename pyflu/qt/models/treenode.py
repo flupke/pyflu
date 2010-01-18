@@ -66,6 +66,21 @@ class TreeNode(object):
     def drag_data(self):
         return self
 
+    def walk(self, include_root=False):
+        """
+        An iterator to walk the tree.
+
+        All the children nodes are returned recursively. If 'include_root' is
+        True, this node is also returned.
+        """
+        if include_root:
+            yield self
+        stack = list(self.children)
+        while stack:
+            child = stack.pop()
+            yield child
+            stack += child.children
+
 
 class FileSystemItemNode(TreeNode):
     """
