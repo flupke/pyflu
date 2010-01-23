@@ -19,7 +19,8 @@ def deep_import(name):
 
 def path_to_name(path, root=None):
     """
-    Converts a path to a .py file to the corresponding dotted module path.
+    (Naively) converts a path to a .py file to the corresponding dotted 
+    module path.
 
     If root is given, the module path is relative to root.
     """

@@ -1,3 +1,35 @@
+"""
+The CompilePyQtCommand class can be used to ease compilation of .ui and .qrc
+files.
+
+Sample setuptools script:
+
+#!/usr/bin/env python
+from setuptools import setup, find_packages, Extension
+from pyflu.setuptools.qt import CompilePyQtCommand
+
+
+class MyPyQtCommand(CompilePyQtCommand):
+
+    defaults = {
+            "ui_dirs": "files/gui",
+            "output_dir": "myapp/gui/ui",
+            "widgets_dir": "myapp/gui/widgets",
+            "dialogs_dir": "myapp/gui/dialogs",
+            "default_dir": "myapp/gui",
+        }
+
+
+setup(
+    # Usual setuptools/distutils stuff
+
+    cmdclass = {
+        "qtcompile": MyPyQtCommand,
+    },
+)
+"""
+
+
 from pyflu.modules import deep_import
 from pyflu.setuptools.base import CommandBase
 import os
