@@ -46,13 +46,17 @@ class CompileCythonCommand(CommandBase):
 
     @classmethod
     def extensions(cls, include_dirs, libraries, library_dirs, cplus=None,
-            additional_sources={}):
+            additional_sources=None, extra_link_args=None):
         if cplus is None:
             cplus = cls.defaults.get("cplus", False)
         if cplus:
             ext_ext = ".cpp"
         else:
             ext_ext = ".c"
+        if additional_sources is None:
+            additional_sources = {}
+        if extra_link_args is None:
+            extra_link_args = []
         ret = []
         for path in cls.cython_files():
             base, ext = splitext(path)
@@ -64,7 +68,8 @@ class CompileCythonCommand(CommandBase):
             ret.append(Extension(module_name, [ext_path] + add_srcs,
                 include_dirs=include_dirs,
                 libraries=libraries,
-                library_dirs=library_dirs))
+                library_dirs=library_dirs,
+                extra_link_args=extra_link_args))
         return ret
 
 
