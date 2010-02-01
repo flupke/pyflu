@@ -60,8 +60,17 @@ class TreeNode(object):
     def rename(self, new_name):
         self.name = new_name
 
-    def delete(self):
+    def detach(self):
+        """
+        Detach this node from its parents.
+        """
         self.parent.children.remove(self)
+
+    def delete(self):
+        """
+        Detach this node from its parent and do any additional delete action.
+        """
+        self.detach()
 
     def drag_data(self):
         return self
@@ -80,6 +89,13 @@ class TreeNode(object):
             child = stack.pop()
             yield child
             stack += child.children
+
+    @property
+    def row(self):
+        """
+        This property holds the row number of this node.
+        """
+        return self.parent.children.index(self)
 
 
 class FileSystemItemNode(TreeNode):

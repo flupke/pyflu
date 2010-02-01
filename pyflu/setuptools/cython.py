@@ -11,19 +11,22 @@ class CompileCythonCommand(CommandBase):
     user_options = [
            ("include=", "I", ".pxi include directories (separated by ',')"),
            ("cplus", None, "compile to c++ (default: False)"),
+           ("all", "a", "recompile all cython files (default: False)"),
         ]
 
-    boolean_options = ["cplus"]
+    boolean_options = ["cplus", "all"]
 
     defaults = {
             "include": "",
             "cplus": False,
+            "all": False,
         }
 
     def run(self):
         for infile in self.cython_files():
             outfile = splitext(infile)[0] + self.outfiles_ext()
-            if isfile(outfile) and getmtime(infile) <= getmtime(outfile):
+            if not self.all and \
+                    isfile(outfile) and getmtime(infile) <= getmtime(outfile):
                 # Source is older than compiled output, skip it
                 continue
             cmd = "cython "
