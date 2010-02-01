@@ -117,6 +117,12 @@ class TreeModel(QAbstractItemModel):
         """
         return pickle.dumps(data)
 
+    def load_drag_data(self, data):
+        """
+        Reverse dump_drag_data().
+        """
+        return pickle.loads(data)
+
     def item_from_index(self, index):
         if not index.isValid():
             return self.root_item

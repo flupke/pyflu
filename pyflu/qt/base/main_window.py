@@ -3,7 +3,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *    
 
 
-class MainWindow(object):
+class MainWindowBase(object):
     """
     A mixin class providing basic functionnality for QMainWindow.
     """
@@ -24,7 +24,7 @@ class MainWindow(object):
         settings.setValue(self.geometry_setting, QVariant(self.saveGeometry()))
 
 
-class MdiMainWindow(MainWindow):
+class MdiMainWindow(MainWindowBase):
     """
     Mixin class for MDI style windows.
     """
