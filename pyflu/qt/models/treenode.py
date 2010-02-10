@@ -29,14 +29,14 @@ class TreeNode(object):
     An object identifying the node's 'editor', used to tell what actions should
     be taken when the node is double clicked for example.
     """
+
+    # Flags
     editable = False
-    """Tells wether the node's name can be edited."""
     deletable = False
-    """Tells if the node can be deleted."""
     draggable = False
-    """Tells if the node can be dragged."""
     drop_target = False
-    """Tells if the node is a drop target."""
+    selectable = True
+    enabled = True
 
     def __init__(self, name=None, parent=None):
         self.children = []

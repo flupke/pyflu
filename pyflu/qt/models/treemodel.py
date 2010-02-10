@@ -9,7 +9,7 @@ class TreeModel(QAbstractItemModel):
     A base class for models using TreeNode based trees.
 
     Implementations must create a member variable named 'root_item' in their
-    __init__.
+    __init__ that conforms to the TreeNode interface.
     """
 
     num_columns = 1
@@ -79,15 +79,38 @@ class TreeModel(QAbstractItemModel):
         return False
     
     def flags(self, index):         
-        flags = QAbstractItemModel.flags(self, index)
         item = self.item_from_index(index)
+        flags = Qt.NoItemFlags
         if item.editable:
             flags |= Qt.ItemIsEditable
         if item.draggable:
             flags |= Qt.ItemIsDragEnabled
         if item.drop_target:
             flags |= Qt.ItemIsDropEnabled
+        if item.selectable:
+            flags |= Qt.ItemIsSelectable
+        if item.enabled:
+            flags |= Qt.ItemIsEnabled
         return flags
+
+    def removeRow(self, row, parent_index=QModelIndex(), detach=True):
+        """
+        QAbstractItemModel.removeRow() implementation.
+
+        Accepts an additional argument, ``detach`` that determines the action
+        to take on the node pointed by the operation. If it is True (the
+        default), the node's ``detach()`` method is called, if it is False the
+        node's ``delete()`` method is called.
+        """
+        parent_item = self.item_from_index(parent_index)
+        node = parent_item.children[row]
+        self.beginRemoveRows(parent_index, row, row)
+        if detach:
+            node.detach()
+        else:
+            node.delete()
+        self.endRemoveRows()
+        return True
 
     # Drag and drop methods
 
