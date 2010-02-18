@@ -100,7 +100,6 @@ def get_open_path(parent, settings_path, filter=None):
 
 def rgba(r, g, b, a=255):
     if PYQT_VERSION <= 263172:
-        warnings.warn("using untested qRgba fix")
         return (qRgba(r, g, b, a) & 0xffffff) - 0x1000000
     return qRgba(r, g, b, a)
 
@@ -109,6 +108,14 @@ def rgb(r, g, b):
     if PYQT_VERSION <= 263172:
         return (qRgb(r, g, b) & 0xffffff) - 0x1000000
     return qRgb(r, g, b)
+
+
+def unpack_rgba(value):
+    alpha = (value & 0xff000000) >> 24
+    red = (value & 0xff0000) >> 16
+    green = (value & 0xff00) >> 8
+    blue = value & 0xff
+    return red, green, blue, alpha
 
 
 def get_or_create_app(args=None):
