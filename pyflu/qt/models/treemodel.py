@@ -112,6 +112,15 @@ class TreeModel(QAbstractItemModel):
         self.endRemoveRows()
         return True
 
+    def insertRow(self, node, row=None, parent_index=QModelIndex()):
+        parent_item = self.item_from_index(parent_index)
+        if row is None:
+            row = len(parent_item.children)
+        self.beginInsertRows(parent_index, row, row)
+        parent_item.add_child(node)
+        self.endInsertRows()
+        return True
+
     # Drag and drop methods
 
     def supportedDropActions(self):

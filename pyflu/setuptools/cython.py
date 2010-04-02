@@ -49,7 +49,8 @@ class CompileCythonCommand(CommandBase):
 
     @classmethod
     def extensions(cls, include_dirs, libraries, library_dirs, cplus=None,
-            additional_sources=None, extra_link_args=None):
+            additional_sources=None, extra_link_args=None,
+            extra_compile_args=None):
         if cplus is None:
             cplus = cls.defaults.get("cplus", False)
         if cplus:
@@ -72,7 +73,8 @@ class CompileCythonCommand(CommandBase):
                 include_dirs=include_dirs,
                 libraries=libraries,
                 library_dirs=library_dirs,
-                extra_link_args=extra_link_args))
+                extra_link_args=extra_link_args,
+                extra_compile_args=extra_compile_args))
         return ret
 
 
