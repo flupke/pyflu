@@ -115,15 +115,7 @@ def serialize(obj):
     Convert *obj* to its serialized form.
     """
     obj_type = type(obj)
-    if hasattr(obj, "uncall") and callable(obj.uncall):
-        # JSONAlizable object
-        args, kwargs = obj.uncall()
-        data = {
-                "__class__": obj.json_class_name(),
-                "__args__": args,
-                "__kwargs__": kwargs,
-            }
-    elif obj_type in reverse_registry:
+    if obj_type in reverse_registry:
         # Registered entry
         uncall, name = reverse_registry[obj_type]
         args, kwargs = uncall(obj)
