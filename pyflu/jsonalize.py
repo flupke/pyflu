@@ -5,7 +5,6 @@ from pyflu.meta.inherit import InheritMeta
 
 
 class JSONAlizeError(Exception): pass 
-class UnserializeError(JSONAlizeError): pass
 class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
 
@@ -203,8 +202,8 @@ def is_serialized_state(state):
     """
     Returns True if the mapping *state* appears to be a serialized state.
     """
-    if isinstance(state, collections.Mapping) and "__class__" in state \
-            and "__args__" in state and len(state) == 2:
+    if isinstance(state, collections.Mapping) and len(state) == 2 \
+            and "__class__" in state and "__args__" in state:
         return True
     return False    
 
