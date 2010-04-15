@@ -36,7 +36,7 @@ class JSONAlizableMeta(InheritMeta):
         else:
             raise NameConflictError("can't register JSONAlizable class %s "
                     "under name '%s', it is already used by %s" % (
-                        new_cls_name, cls_name,
+                        cls_name, new_cls_name,
                         cls.registry[new_cls_name].__name__))
         return new_class
 
