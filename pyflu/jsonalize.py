@@ -5,7 +5,7 @@ There are two ways of using jsonalize:
 
 * By creating a subclass of JSONAlizable and filling its schema::
 
-    import jsonalize
+    from pyflu import jsonalize
 
     class MyClass(jsonalize.JSONAlizable):
         
@@ -16,7 +16,7 @@ There are two ways of using jsonalize:
 
 * By registering a class and an associated uncall function::
 
-    import jsonalize
+    from pyflu import jsonalize
 
     class MyClass:
 
