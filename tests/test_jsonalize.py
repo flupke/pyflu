@@ -1,5 +1,6 @@
 from nose.tools import assert_equal, assert_raises
-from pyflu.jsonalize import JSONAlizable, dumps, loads, NameConflictError
+from pyflu.jsonalize import JSONAlizable, dumps, loads, NameConflictError, \
+        UnregisteredClassError, SchemaValidationError, get_class, copy
 
 
 class Base(JSONAlizable):
@@ -48,19 +49,31 @@ def test_basic():
     """
     b = Base()
     assert_equal(b.bar, 123)
-    data = dumps(b)
-    b2 = loads(data)
+    b2 = copy(b)
     assert_equal(b2, b)
 
 
-def test_conflict():
+def test_errors():
     def f():
+        # Create a class whose name conflicts with Base
         class Foo(JSONAlizable):
             @staticmethod
             def json_class_name():
                 return "Base"
         return Foo
+
+    def g():
+        # Create a class with a reserved name in it schema
+        class Foo(JSONAlizable):
+            schema = {
+                    "uncall": None,
+                }
+        return Foo
+
     assert_raises(NameConflictError, f)
+    assert_raises(SchemaValidationError, g)
+    assert_raises(UnregisteredClassError, get_class, "gniarjh")
+    assert_raises(NameError, Base, unknown=123)
 
 
 def test_inherit():

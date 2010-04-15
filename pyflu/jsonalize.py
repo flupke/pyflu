@@ -7,31 +7,37 @@ from pyflu.meta.inherit import InheritMeta
 class JSONAlizeError(Exception): pass 
 class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
+class SchemaValidationError(JSONAlizeError): pass
 
 
 class JSONAlizableMeta(InheritMeta):
+    """
+    Base type of JSONAlizable.
+
+    Inherit and validate schema, check for class name conflicts.
+    """
 
     inherited_dicts = ("schema",)
-    registered_names = {}
+    registry = {}
     reserved_names = ("uncall", "schema", "json_class_name", "__args__",
             "__class__")
 
     def __new__(cls, cls_name, bases, attrs):
         new_class = super(JSONAlizableMeta, cls).__new__(cls, cls_name, bases, attrs)
-        # Check for name conflicts with other JSONAlizableMeta classes
         new_cls_name = new_class.json_class_name()
-        if new_cls_name not in cls.registered_names:
-            cls.registered_names[new_cls_name] = new_class
+        # Validate schema
+        for name in new_class.schema:
+            if name in cls.reserved_names:
+                raise SchemaValidationError("can't use reserved name '%s' in "
+                        "%s schema" % (name, new_cls_name))
+        # Check for name conflicts with other JSONAlizableMeta classes
+        if new_cls_name not in cls.registry:
+            cls.registry[new_cls_name] = new_class
         else:
             raise NameConflictError("can't register JSONAlizable class %s "
                     "under name '%s', it is already used by %s" % (
                         new_cls_name, cls_name,
-                        cls.registered_names[new_cls_name].__name__))
-        # Validate schema
-        for name in new_class.schema:
-            if name in cls.reserved_names:
-                raise ValueError("can't use reserved name '%s' in %s schema" %
-                        (name, new_cls_name))
+                        cls.registry[new_cls_name].__name__))
         return new_class
 
 
@@ -187,14 +193,11 @@ def get_class(name):
     """
     Retrieve a JSONAlizable class by its name.
     """
-    stack = JSONAlizableBase.__subclasses__()
-    while stack:
-        cls = stack.pop()
-        if name == cls.json_class_name():
-            return cls
-        stack += cls.__subclasses__()
-    raise UnregisteredClassError("class '%s' is not registered in "
-            "serializable classes" % name)
+    try:
+        return JSONAlizableMeta.registry[name]
+    except KeyError:
+        raise UnregisteredClassError("'%s' is not a registered JSONAlizable "
+                "class name" % name)
 
 
 def is_serialized_state(state):
