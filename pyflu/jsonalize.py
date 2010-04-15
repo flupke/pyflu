@@ -10,7 +10,7 @@ class NameConflictError(JSONAlizeError): pass
 class SchemaValidationError(JSONAlizeError): pass
 
 
-# Non JSONAlizable subclasses registry
+# Classes and uncall() methods registry
 registry = {}
 reverse_registry = {}
 
