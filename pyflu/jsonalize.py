@@ -1,3 +1,35 @@
+"""
+Classes and utilities to serialize objects to JSON.
+
+There are two ways of using jsonalize:
+
+* By creating a subclass of JSONAlizable and filling its schema::
+
+    import jsonalize
+
+    class MyClass(jsonalize.JSONAlizable):
+        
+        schema = {
+                "foo": None,
+                "bar": 123,
+            }
+
+* By registering a class and an associated uncall function::
+
+    import jsonalize
+
+    class MyClass:
+
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+
+    def uncall_myclass(obj):
+        return (obj.a, obj.b), {}
+
+    jsonalize.register(MyClass, uncall_myclass)
+"""
+
 from copy import deepcopy
 import collections
 import json
