@@ -30,7 +30,7 @@ class JSONAlizableMeta(InheritMeta):
             if name in cls.reserved_names:
                 raise SchemaValidationError("can't use reserved name '%s' in "
                         "%s schema" % (name, new_cls_name))
-        # Check for name conflicts with other JSONAlizableMeta classes
+        # Check for name conflicts
         if new_cls_name not in cls.registry:
             cls.registry[new_cls_name] = new_class
         else:
@@ -50,7 +50,7 @@ class JSONAlizableBase(object):
     """
     A mapping storing the serialized attributes, and their default values.
 
-    This parameter is inherited and extended in subclasses.
+    This attribute is inherited and extended in subclasses.
     """
 
     def __init__(self, **kwargs):
@@ -202,7 +202,7 @@ def get_class(name):
 
 def is_serialized_state(state):
     """
-    Returns True if the mapping *state* appears to be a serialized state.
+    Returns True if *state* appears to be a serialized state.
     """
     if isinstance(state, collections.Mapping) and len(state) == 2 \
             and "__class__" in state and "__args__" in state:
