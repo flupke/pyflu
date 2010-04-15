@@ -9,7 +9,9 @@ class CompileCythonCommand(CommandBase):
     
     description = "compile all cython files"
     user_options = [
-           ("include=", "I", ".pxi include directories (separated by ',')"),
+           ("include=", "I", "cython include directories (separated by ',')"),
+           ("exclude=", "e", "comma separated list of folders to exclude "
+                             "from search for .pyx files"),
            ("cplus", None, "compile to c++ (default: False)"),
            ("all", "a", "recompile all cython files (default: False)"),
         ]
@@ -18,12 +20,17 @@ class CompileCythonCommand(CommandBase):
 
     defaults = {
             "include": "",
+            "exclude": "",
             "cplus": False,
             "all": False,
         }
 
+    def finalize_options(self):
+        self.include = [p for p in self.include.split(",") if p]
+        self.exclude = [p for p in self.exclude.split(",") if p]
+
     def run(self):
-        for infile in self.cython_files():
+        for infile in self.cython_files(exclude=self.exclude):
             outfile = splitext(infile)[0] + self.outfiles_ext()
             if not self.all and \
                     isfile(outfile) and getmtime(infile) <= getmtime(outfile):
@@ -33,7 +40,7 @@ class CompileCythonCommand(CommandBase):
             if self.cplus:
                 cmd += "--cplus "
             if self.include:
-                cmd += "-I %s " % self.include
+                cmd += "".join(["-I %s " % i for i in self.include])
             cmd += infile
             print cmd
             os.system(cmd)
@@ -44,13 +51,19 @@ class CompileCythonCommand(CommandBase):
         return ".c"
 
     @classmethod
-    def cython_files(cls):
-        return iter_files(".pyx")
+    def cython_files(cls, exclude=None):
+        return iter_files(".pyx", exclude=exclude)
 
     @classmethod
-    def extensions(cls, include_dirs, libraries, library_dirs, cplus=None,
-            additional_sources=None, extra_link_args=None,
-            extra_compile_args=None):
+    def extensions(cls, include_dirs=None, libraries=None, library_dirs=None,
+            cplus=None, additional_sources=None, extra_link_args=None,
+            extra_compile_args=None, exclude=None):
+        if include_dirs is None:
+            include_dirs = []
+        if libraries is None:
+            libraries = []
+        if library_dirs is None:
+            library_dirs = []
         if cplus is None:
             cplus = cls.defaults.get("cplus", False)
         if cplus:
@@ -61,8 +74,11 @@ class CompileCythonCommand(CommandBase):
             additional_sources = {}
         if extra_link_args is None:
             extra_link_args = []
+        if exclude is None:
+            exclude = cls.defaults.get("exclude", "")
+            exclude = [e for e in exclude.split(",") if e]
         ret = []
-        for path in cls.cython_files():
+        for path in cls.cython_files(exclude=exclude):
             base, ext = splitext(path)
             ext_path = base + ext_ext
             module_name = base.replace(os.sep, ".")

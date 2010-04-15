@@ -9,7 +9,6 @@ class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
 
 
-
 class JSONAlizableMeta(InheritMeta):
 
     inherited_dicts = ("schema",)
@@ -206,5 +205,3 @@ def is_serialized_state(state):
             and "__class__" in state and "__args__" in state:
         return True
     return False    
-
-
