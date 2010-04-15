@@ -79,5 +79,11 @@ def test_errors():
 def test_inherit():
     combined = Base.schema.copy()
     combined.update({"new_field": None})
-    assert SubSub.schema == combined
+    assert_equal(SubSub.schema, combined)
 
+
+def test_builtin():
+    cplx = 1 + 2j
+    slce = slice(1, 2, 3)
+    assert_equal(cplx, copy(cplx))
+    assert_equal(slce, copy(slce))

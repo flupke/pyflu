@@ -4,6 +4,11 @@ import json
 from pyflu.meta.inherit import InheritMeta
 
 
+# Non JSONAlizable subclasses registry
+registry = {}
+reverse_registry = {}
+
+
 class JSONAlizeError(Exception): pass 
 class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
@@ -20,7 +25,7 @@ class JSONAlizableMeta(InheritMeta):
     inherited_dicts = ("schema",)
     registry = {}
     reserved_names = ("uncall", "schema", "json_class_name", "__args__",
-            "__class__")
+            "__kwargs__", "__class__")
 
     def __new__(cls, cls_name, bases, attrs):
         new_class = super(JSONAlizableMeta, cls).__new__(cls, cls_name, bases, attrs)
@@ -74,7 +79,7 @@ class JSONAlizableBase(object):
     def uncall(self):
         """
         Returns the constructor parameters needed to serialize the instance, as
-        a dict.
+        a tuple containing positionnal arguments and keyword arguments.
 
         The default implementation returns the attributes defined in
         :attr:`schema` processed by :func:`serialize`.
@@ -82,7 +87,7 @@ class JSONAlizableBase(object):
         args = {}
         for name in self.schema:
             args[name] = serialize(getattr(self, name))
-        return args
+        return (), args
             
 
 class JSONAlizable(JSONAlizableBase):
@@ -94,13 +99,24 @@ def serialize(obj):
     """
     Convert *obj* to its serialized form.
     """
+    obj_type = type(obj)
     if hasattr(obj, "uncall") and callable(obj.uncall):
         # JSONAlizable object
-        args = obj.uncall()
+        args, kwargs = obj.uncall()
         data = {
                 "__class__": obj.json_class_name(),
                 "__args__": args,
-            }        
+                "__kwargs__": kwargs,
+            }
+    elif obj_type in reverse_registry:
+        # Registered entry
+        uncall, name = reverse_registry[obj_type]
+        args, kwargs = uncall(obj)
+        data = {
+                "__class__": name,
+                "__args__": args,
+                "__kwargs__": kwargs,
+            }
     elif isinstance(obj, collections.Mapping):
         # Mapping like object
         data = {}
@@ -129,7 +145,7 @@ def unserialize(state):
         if is_serialized_state(state):
             # Looks to be a serialized class
             cls = get_class(state["__class__"])
-            ret = cls(**state["__args__"])
+            ret = cls(*state["__args__"], **state["__kwargs__"])
         else:
             # A normal dict
             ret = {}
@@ -196,15 +212,58 @@ def get_class(name):
     try:
         return JSONAlizableMeta.registry[name]
     except KeyError:
-        raise UnregisteredClassError("'%s' is not a registered JSONAlizable "
-                "class name" % name)
+        try:
+            return registry[name][1]
+        except KeyError:
+            raise UnregisteredClassError("'%s' is not a registered "
+                    "JSONAlizable class name" % name)
 
 
 def is_serialized_state(state):
     """
     Returns True if *state* appears to be a serialized state.
     """
-    if isinstance(state, collections.Mapping) and len(state) == 2 \
-            and "__class__" in state and "__args__" in state:
+    if isinstance(state, collections.Mapping) and len(state) == 3 \
+            and "__class__" in state and "__args__" in state \
+            and "__kwargs__" in state:
         return True
     return False    
+
+
+def register(cls, uncall, name=None):
+    """
+    Register *cls* for auto serialization.
+
+    *uncall* must be a function equivalent to :meth:`JSONAlizable.uncall`,
+    taking a *cls* object in parameter and returning its init arguments.
+
+    If *name* is given it is used to as the code to register *cls*. The default
+    is to use *cls*' name.
+    """
+    if name is None:
+        name = cls.__name__
+    # Check for name conflicts
+    conflicting_cls = None
+    if name in JSONAlizableMeta.registry:
+        conflicting_cls = JSONAlizableMeta.registry[name]
+    elif name in registry:
+        conflicting_cls = registry[name][1]
+    if conflicting_cls:
+        raise NameConflictError("can't register class %s "
+                "under name '%s', it is already used by %s" % 
+                (cls.__name__, name, conflicting_cls.__name__))
+    registry[name] = (uncall, cls)
+    reverse_registry[cls] = (uncall, name)
+
+
+# Register common builtin types
+
+def uncall_slice(obj):
+    return (obj.start, obj.stop, obj.step), {}
+
+register(slice, uncall_slice)
+
+def uncall_complex(obj):
+    return (obj.real, obj.imag), {}
+
+register(complex, uncall_complex)
