@@ -4,26 +4,47 @@ import json
 from pyflu.meta.inherit import InheritMeta
 
 
-# Non JSONAlizable subclasses registry
-registry = {}
-reverse_registry = {}
-
-
 class JSONAlizeError(Exception): pass 
 class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
 class SchemaValidationError(JSONAlizeError): pass
 
 
+# Non JSONAlizable subclasses registry
+registry = {}
+reverse_registry = {}
+
+
+def register(cls, uncall, name=None):
+    """
+    Register *cls* for auto serialization.
+
+    *uncall* must be a function equivalent to :meth:`JSONAlizable.uncall`,
+    taking a *cls* object in parameter and returning its init arguments.
+
+    If *name* is given it is used to as the code to register *cls*. The default
+    is to use *cls*' name.
+    """
+    if name is None:
+        name = cls.__name__
+    # Check for name conflicts
+    if name in registry:
+        conflicting_cls = registry[name]
+        raise NameConflictError("can't register class %s "
+                "under name '%s', it is already used by %s" % 
+                (cls.__name__, name, conflicting_cls.__name__))
+    registry[name] = cls
+    reverse_registry[cls] = (uncall, name)
+
+
 class JSONAlizableMeta(InheritMeta):
     """
     Base type of JSONAlizable.
 
-    Inherit and validate schema, check for class name conflicts.
+    Inherit and validate schema, register the new class.
     """
 
     inherited_dicts = ("schema",)
-    registry = {}
     reserved_names = ("uncall", "schema", "json_class_name", "__args__",
             "__kwargs__", "__class__")
 
@@ -35,14 +56,8 @@ class JSONAlizableMeta(InheritMeta):
             if name in cls.reserved_names:
                 raise SchemaValidationError("can't use reserved name '%s' in "
                         "%s schema" % (name, new_cls_name))
-        # Check for name conflicts
-        if new_cls_name not in cls.registry:
-            cls.registry[new_cls_name] = new_class
-        else:
-            raise NameConflictError("can't register JSONAlizable class %s "
-                    "under name '%s', it is already used by %s" % (
-                        cls_name, new_cls_name,
-                        cls.registry[new_cls_name].__name__))
+        # Register class
+        register(new_class, new_class.uncall, name=new_cls_name)
         return new_class
 
 
@@ -210,13 +225,10 @@ def get_class(name):
     Retrieve a JSONAlizable class by its name.
     """
     try:
-        return JSONAlizableMeta.registry[name]
+        return registry[name]
     except KeyError:
-        try:
-            return registry[name][1]
-        except KeyError:
-            raise UnregisteredClassError("'%s' is not a registered "
-                    "JSONAlizable class name" % name)
+        raise UnregisteredClassError("'%s' is not a registered "
+                "JSONAlizable class name" % name)
 
 
 def is_serialized_state(state):
@@ -229,31 +241,6 @@ def is_serialized_state(state):
         return True
     return False    
 
-
-def register(cls, uncall, name=None):
-    """
-    Register *cls* for auto serialization.
-
-    *uncall* must be a function equivalent to :meth:`JSONAlizable.uncall`,
-    taking a *cls* object in parameter and returning its init arguments.
-
-    If *name* is given it is used to as the code to register *cls*. The default
-    is to use *cls*' name.
-    """
-    if name is None:
-        name = cls.__name__
-    # Check for name conflicts
-    conflicting_cls = None
-    if name in JSONAlizableMeta.registry:
-        conflicting_cls = JSONAlizableMeta.registry[name]
-    elif name in registry:
-        conflicting_cls = registry[name][1]
-    if conflicting_cls:
-        raise NameConflictError("can't register class %s "
-                "under name '%s', it is already used by %s" % 
-                (cls.__name__, name, conflicting_cls.__name__))
-    registry[name] = (uncall, cls)
-    reverse_registry[cls] = (uncall, name)
 
 
 # Register common builtin types
