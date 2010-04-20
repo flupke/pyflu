@@ -14,11 +14,11 @@ class InheritMeta(type):
             # Not a subclass of InheritMeta, don't do anything special
             return super_new(cls, cls_name, bases, attrs)
         # Inherit parent dicts
-        combined_dicts = {}
         for dict_name in cls.inherited_dicts:
             combined = {}
             for base in parents:
                 combined.update(getattr(base, dict_name, {}))
-            attrs.setdefault(dict_name, {}).update(combined)
+            combined.update(attrs.get(dict_name, {}))
+            attrs[dict_name] = combined
         return super_new(cls, cls_name, bases, attrs)
     

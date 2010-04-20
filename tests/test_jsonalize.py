@@ -30,16 +30,25 @@ class Sub(JSONAlizable):
 
     schema = {
             "baz": "yarr",
+            "foo": None,
         }
 
     def __eq__(self, other):
         return self.baz == other.baz
 
 
-class SubSub(Base):
+class SubSub(Sub):
 
     schema = {
             "new_field": None,
+            "baz": "no_yarr",
+        }
+
+
+class SubSubSub(SubSub):
+
+    schema = {
+            "foo": 123,
         }
 
 
@@ -63,7 +72,7 @@ def test_errors():
         return Foo
 
     def g():
-        # Create a class with a reserved name in it schema
+        # Create a class with a reserved name in its schema
         class Foo(JSONAlizable):
             schema = {
                     "uncall": None,
@@ -77,9 +86,18 @@ def test_errors():
 
 
 def test_inherit():
-    combined = Base.schema.copy()
-    combined.update({"new_field": None})
-    assert_equal(SubSub.schema, combined)
+    subsub_schema = {
+            "new_field": None, 
+            "baz": "no_yarr",
+            "foo": None,
+        }
+    subsubsub_schema = {
+            "new_field": None, 
+            "baz": "no_yarr",
+            "foo": 123,
+        }
+    assert_equal(SubSub.schema, subsub_schema)
+    assert_equal(SubSubSub.schema, subsubsub_schema)
 
 
 def test_builtin():
