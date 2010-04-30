@@ -47,6 +47,9 @@ class MdiMainWindow(MainWindowBase):
 
 
 class MruMainWindow(object):
+    """
+    A mixin class to handle MRU files lists.
+    """
 
     mru_setting = "state/most_recently_used_files"
     mru_length = 5

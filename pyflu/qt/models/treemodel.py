@@ -1,7 +1,7 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from pyflu.qt.models.treenode import RenameError, FolderNode
-import pickle
+import json
 
 
 class TreeModel(QAbstractItemModel):
@@ -13,7 +13,7 @@ class TreeModel(QAbstractItemModel):
     """
 
     num_columns = 1
-    dnd_mime_type = "text/pickle"
+    dnd_mime_type = "text/plain"
 
     # QAbstractItemModel interface
 
@@ -142,18 +142,29 @@ class TreeModel(QAbstractItemModel):
         return mime_data                
             
     # Utilities
+    
+    @classmethod
+    def decode_mime(cls, mime_data):
+        """
+        Decode a QMimeData object coming from :meth:`mimeData` back to its 
+        Python form.
+        """
+        return cls.load_drag_data(str(mime_data.retrieveData(cls.dnd_mime_type, 
+                QVariant.String).toString()))
 
-    def dump_drag_data(self, data):
+    @classmethod
+    def dump_drag_data(cls, data):
         """
         Create a dump of ``data``, suitable to be inserted in a QMimeData.
         """
-        return pickle.dumps(data)
+        return json.dumps(data)
 
-    def load_drag_data(self, data):
+    @classmethod
+    def load_drag_data(cls, data):
         """
         Reverse dump_drag_data().
         """
-        return pickle.loads(data)
+        return json.loads(data)
 
     def item_from_index(self, index):
         if not index.isValid():

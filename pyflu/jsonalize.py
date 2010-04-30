@@ -28,6 +28,15 @@ There are two ways of using jsonalize:
         return (obj.a, obj.b), {}
 
     jsonalize.register(MyClass, uncall_myclass)
+
+You can then dump and load objects with the usual dump(s) and load(s)
+functions::
+
+    obj = MyClass()
+    dumped_state = jsonalize.dumps(obj)
+    obj2 = jsonalize.loads(dumped_state)
+    assert obj == obj2
+
 """
 
 from copy import deepcopy
@@ -47,25 +56,31 @@ registry = {}
 reverse_registry = {}
 
 
-def register(cls, uncall, name=None):
+def register(cls, uncall, name=None, constructor=None):
     """
     Register *cls* for auto serialization.
 
-    *uncall* must be a function equivalent to :meth:`JSONAlizable.uncall`,
-    taking a *cls* object in parameter and returning its init arguments.
+    *uncall* must be a callable taking the instance to be serialized and
+    returning the arguments to pass to the constructor. *uncall* should return
+    a tuple containing the positionnal and keyword arguments, in an iterable
+    and a mapping.
 
     If *name* is given it is used to as the code to register *cls*. The default
     is to use *cls*' name.
+
+    You can specify *constructor* to alter the way instances are created from
+    the serialized state. It should be a callable and will be passed the
+    arguments returned by *uncall* when unserializing this type of object.
     """
     if name is None:
         name = cls.__name__
     # Check for name conflicts
     if name in registry:
-        conflicting_cls = registry[name]
+        conflicting_cls = registry[name][0]
         raise NameConflictError("can't register class %s "
                 "under name '%s', it is already used by %s" % 
                 (cls.__name__, name, conflicting_cls.__name__))
-    registry[name] = cls
+    registry[name] = (cls, constructor)
     reverse_registry[cls] = (uncall, name)
 
 
@@ -136,6 +151,26 @@ class JSONAlizableBase(object):
             args[name] = serialize(getattr(self, name))
         return (), args
             
+    @classmethod
+    def load(cls, filename):
+        """
+        Create a new instance of this class from the contents of the file at
+        *filename*.
+        """
+        with open(filename, "r") as fp:
+            ret = load(fp)
+        if not isinstance(ret, cls):
+            raise TypeError("invalid type serialized type: expected '%s' "
+                    "got '%s'" % (cls, type(ret)))
+        return ret
+
+    def save(self, filename):
+        """
+        Save this instance to *filename*.
+        """
+        with open(filename, "w") as fp:
+            dump(self, fp)
+
 
 class JSONAlizable(JSONAlizableBase):
 
@@ -195,15 +230,15 @@ def unserialize(state):
     return ret
 
 
-def dump(obj, *args, **kwargs):
+def dump(obj, fp, *args, **kwargs):
     """
-    Dump JSON-serializable *obj* to a file.
+    Dump JSON-serializable *obj* to an open file object *fp*.
 
     The arguments after *obj* are passed directly to json.dump().
     """    
     defaults = {"indent": 4}
     defaults.update(kwargs)
-    json.dump(serialize(obj), *args, **defaults)
+    json.dump(serialize(obj), fp, *args, **defaults)
 
 
 def dumps(obj, *args, **kwargs):
@@ -217,13 +252,13 @@ def dumps(obj, *args, **kwargs):
     return json.dumps(serialize(obj), *args, **defaults)
 
 
-def load(*args, **kwargs):
+def load(fp, *args, **kwargs):
     """
     Load an object from a file.
 
     The arguments are passed directly to json.load().
     """    
-    state = json.load(*args, **kwargs)
+    state = json.load(fp, *args, **kwargs)
     return unserialize(state)
 
 
@@ -249,15 +284,18 @@ def get_class(name):
     Retrieve a JSONAlizable class by its name.
     """
     try:
-        return registry[name]
+        cls, constructor = registry[name]
     except KeyError:
         raise UnregisteredClassError("'%s' is not a registered "
                 "JSONAlizable class name" % name)
+    if constructor is not None:
+        return constructor
+    return cls
 
 
 def is_serialized_state(state):
     """
-    Returns True if *state* appears to be a serialized state.
+    Returns True if *state* appears to be a serialized object.
     """
     if isinstance(state, collections.Mapping) and len(state) == 3 \
             and "__class__" in state and "__args__" in state \
@@ -266,8 +304,9 @@ def is_serialized_state(state):
     return False    
 
 
-
 # Register common builtin types
+import uuid
+import types
 
 def uncall_slice(obj):
     return (obj.start, obj.stop, obj.step), {}
@@ -278,3 +317,29 @@ def uncall_complex(obj):
     return (obj.real, obj.imag), {}
 
 register(complex, uncall_complex)
+
+def uncall_uuid(obj):
+    return (), {"hex": obj.hex}
+
+register(uuid.UUID, uncall_uuid)
+
+def uncall_ellipsis(obj):
+    return (), {}
+
+def get_ellipsis():
+    return Ellipsis
+
+register(types.EllipsisType, uncall_ellipsis, constructor=get_ellipsis)
+
+try:
+    import numpy as np
+
+    def uncall_ndarray(obj):
+        return (obj.tolist(), obj.dtype.name), {}
+
+    def create_ndarray(data, dtype):
+        return np.array(data, str(dtype))
+
+    register(np.ndarray, uncall_ndarray, constructor=create_ndarray)
+except ImportError:
+    pass

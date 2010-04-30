@@ -1,5 +1,5 @@
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4.QtCore import Qt, SIGNAL
+from PyQt4.QtGui import QTreeView, QAction, QMenu, QMessageBox
 import louie
 
 
@@ -14,12 +14,6 @@ class TreeNodeView(QTreeView):
 
     TreeNodeView subclasses can define any context menu action, the method of
     the same name in the subclass will be used as the action's callback.
-    """
-
-    error_signal = None
-    """
-    This has to be defined in subclasses and must be a subclass of
-    louie.Signal.
     """
 
     def __init__(self, parent=None):
@@ -48,10 +42,6 @@ class TreeNodeView(QTreeView):
             self.delete()
         return QTreeView.keyReleaseEvent(self, event)
 
-    def setModel(self, model):
-        louie.connect(self.model_error, self.error_signal, model)
-        return QTreeView.setModel(self, model)
-
     # Other methods
 
     def show_context_menu(self, position):
@@ -75,6 +65,9 @@ class TreeNodeView(QTreeView):
             QMessageBox.critical(self, self.trUtf8("Rename error"), unicode(e))
 
     def delete(self):
+        """
+        Delete the currently selected item.
+        """
         index = self.currentIndex()
         if not index.isValid():
             return
