@@ -226,6 +226,8 @@ def unserialize(state):
             for key, value in state.items():
                 ret[key] = unserialize(value)
     else:
+        # json only returns items of type list or dict, if we get anything else
+        # then it's not a serialized state
         ret = state
     return ret
 

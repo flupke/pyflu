@@ -1,6 +1,8 @@
 from nose.tools import assert_equal, assert_raises
 from pyflu.jsonalize import JSONAlizable, dumps, loads, NameConflictError, \
         UnregisteredClassError, SchemaValidationError, get_class, copy
+import uuid
+import numpy as np
 
 
 class Base(JSONAlizable):
@@ -22,8 +24,13 @@ class Base(JSONAlizable):
             self.dict = {"one": Sub(baz="one"), "two": Sub(baz="two")}
 
     def __eq__(self, other):
-        return self.bar == other.bar and self.list == other.list and \
-                self.foo == other.foo and self.dict == other.dict
+        for name in self.schema:
+            if getattr(self, name) != getattr(other, name):
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 class Sub(JSONAlizable):
@@ -34,7 +41,13 @@ class Sub(JSONAlizable):
         }
 
     def __eq__(self, other):
-        return self.baz == other.baz
+        for name in self.schema:
+            if getattr(self, name) != getattr(other, name):
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 class SubSub(Sub):
@@ -49,6 +62,7 @@ class SubSubSub(SubSub):
 
     schema = {
             "foo": 123,
+            "slices": [slice(None, None, None), slice(1, 2, 3)],
         }
 
 
@@ -60,6 +74,10 @@ def test_basic():
     assert_equal(b.bar, 123)
     b2 = copy(b)
     assert_equal(b2, b)
+    s = SubSubSub()
+    s2 = copy(s)
+    assert_equal(s, s2)
+    assert_equal(s2.slices, [slice(None, None, None), slice(1, 2, 3)])
 
 
 def test_errors():
@@ -95,13 +113,25 @@ def test_inherit():
             "new_field": None, 
             "baz": "no_yarr",
             "foo": 123,
+            "slices": [slice(None, None, None), slice(1, 2, 3)],
         }
     assert_equal(SubSub.schema, subsub_schema)
     assert_equal(SubSubSub.schema, subsubsub_schema)
 
 
 def test_builtin():
-    cplx = 1 + 2j
-    slce = slice(1, 2, 3)
-    assert_equal(cplx, copy(cplx))
-    assert_equal(slce, copy(slce))
+
+    objs = (
+            1 + 2j,
+            slice(1, 2, 3),
+            slice(None, None, None),
+            [slice(None, None, None), slice(1, 2, 3)],
+            Ellipsis,
+            uuid.uuid4(),
+        )
+    for obj in objs:
+        assert_equal(obj, copy(obj))
+
+    array = np.arange(5)
+    assert_equal((array == copy(array)).all(), True)
+
