@@ -49,11 +49,16 @@ class MdiMainWindow(MainWindowBase):
 class MruMainWindow(object):
     """
     A mixin class to handle MRU files lists.
+
+    Subclasses must define the :attr:`mru_load_func` and :attr:`mru_menu` class
+    attributes, which must be names of the load method (taking the file
+    path as argument) and of the MRU menu item.
     """
 
     mru_setting = "state/most_recently_used_files"
     mru_length = 5
     mru_load_func = None
+    mru_menu = None
 
     def mru_list(self):
         settings = QSettings()
@@ -107,5 +112,6 @@ class MruMainWindow(object):
         getattr(self, self.mru_load_func)(path)
 
     def refresh_mru_menu(self):
-        raise NotImplementedError("subclasses of MruMainWindow must provide "
-                "an implementation of refresh_mru_menu()")
+        menu = getattr(self, self.mru_menu)
+        menu.clear()
+        menu.addActions(self.mru_actions())

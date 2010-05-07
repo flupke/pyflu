@@ -93,7 +93,7 @@ class TreeNode(object):
     @property
     def row(self):
         """
-        This property holds the row number of this node.
+        Return the row number of this node.
         """
         return self.parent.children.index(self)
 

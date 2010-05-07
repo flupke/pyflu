@@ -2,3 +2,4 @@ build
 dist
 pyflu.egg-info
 .coverage
+*.cover
