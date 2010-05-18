@@ -219,7 +219,11 @@ def unserialize(state):
         if is_serialized_state(state):
             # Looks to be a serialized class
             cls = get_class(state["__class__"])
-            ret = cls(*state["__args__"], **state["__kwargs__"])
+            # Force kwargs keys to be of str type
+            kwargs = {}
+            for key, value in state["__kwargs__"].items():
+                kwargs[str(key)] = value
+            ret = cls(*state["__args__"], **kwargs)
         else:
             # A normal dict
             ret = {}
