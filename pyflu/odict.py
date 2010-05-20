@@ -48,6 +48,16 @@ class odict(IterableUserDict):
 
         return (key, val)
 
+    def pop(self, key, *default):
+        ret = IterableUserDict.pop(self, key, *default)
+        try:
+            self._keys.remove(key)
+        except ValueError:
+            # This exception can happen when a default value is passed, so we
+            # can safely ignore it
+            pass
+        return ret
+
     def setdefault(self, key, failobj=None):
         IterableUserDict.setdefault(self, key, failobj)
         if key not in self._keys: self._keys.append(key)
