@@ -66,23 +66,27 @@ def get_save_path(parent, settings_path, default_filename=None,
     return save_path
 
 
-def get_open_path(parent, settings_path, filter=None):
+def get_open_path(parent, settings_path=None, filter=None):
     """
     Shows an 'open file' dialog and returns the selected path.
 
     Also remembers the selected folder, so that subsequent calls to this
-    function with the same ``settings_path`` will open in the last selected
+    function with the same *settings_path* will open in the last selected
     directory.
 
-    If ``filter`` is specified, it must be an iterable containing filters
-    definitions. See the ``format_file_dialog_filter_string()`` docstring for
+    If *filter* is specified, it must be an iterable containing filters
+    definitions. See the :func:`format_file_dialog_filter_string` docstring for
     details.
 
     Returns None if the user canceled.
     """
     # Get the last used save directory
     settings = QSettings()
-    last_dir = unicode(settings.value(settings_path, QVariant(u"")).toString())
+    if settings_path is not None:
+        last_dir = unicode(settings.value(settings_path,
+            QVariant(u"")).toString())
+    else:
+        last_dir = QString()
     # Get save location
     if filter is not None:
         filter = format_file_dialog_filter_string(filter)
@@ -93,8 +97,9 @@ def get_open_path(parent, settings_path, filter=None):
     if open_path.isNull():
         return None
     open_path = unicode(open_path)
-    # Remember save location directory
-    settings.setValue(settings_path, QVariant(dirname(open_path)))
+    if settings_path is not None:
+        # Remember save location directory
+        settings.setValue(settings_path, QVariant(dirname(open_path)))
     return open_path
 
 

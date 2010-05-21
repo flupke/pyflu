@@ -14,7 +14,9 @@ There are two ways of using jsonalize:
                 "bar": 123,
             }
 
-* By registering a class and an associated uncall function::
+* Or by registering a class and an associated ``uncall()`` function. This
+function takes an instance of the class in parameter and returns the positional
+and keyword arguments needed to recreate this instance::
 
     from pyflu import jsonalize
 
@@ -46,9 +48,14 @@ from pyflu.meta.inherit import InheritMeta
 
 
 class JSONAlizeError(Exception): pass 
-class UnregisteredClassError(JSONAlizeError): pass
 class NameConflictError(JSONAlizeError): pass
 class SchemaValidationError(JSONAlizeError): pass
+
+class UnregisteredClassError(JSONAlizeError):
+
+    def __init__(self, msg, class_name):
+        super(UnregisteredClassError, self).__init__(msg)
+        self.class_name = class_name
 
 
 # Classes and uncall() methods registry
@@ -293,7 +300,7 @@ def get_class(name):
         cls, constructor = registry[name]
     except KeyError:
         raise UnregisteredClassError("'%s' is not a registered "
-                "JSONAlizable class name" % name)
+                "JSONAlizable class name" % name, name)
     if constructor is not None:
         return constructor
     return cls
