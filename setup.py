@@ -32,5 +32,5 @@ The ``update`` package depends on bsdiff_. Ubuntu users can find it in the
     setup_requires = ["nose"],
     install_requires = ["lxml"],
 
-    packages = find_packages("pyflu"),
+    packages = find_packages(exclude="tests"),
 )
