@@ -91,6 +91,17 @@ def register(cls, uncall, name=None, constructor=None):
     reverse_registry[cls] = (uncall, name)
 
 
+def unregister(cls, name=None):
+    """
+    Unregister *cls*.
+    """
+    if name is None:
+        name = cls.__name__
+    del registry[name]
+    del reverse_registry[cls]
+    
+
+
 class JSONAlizableMeta(InheritMeta):
     """
     Base type of JSONAlizable.
