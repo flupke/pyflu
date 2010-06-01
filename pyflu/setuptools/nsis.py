@@ -31,11 +31,13 @@ class CompileNsisCommand(CommandBase):
     the output directory, relative to the installation directory.
     """
 
+    version = "0.1_pre"
+
     def run(self):
         script_file = open(self.script_output, "w")
         template_file = open(self.nsis_template, "r")
         data = { 
-                "version": version(),
+                "version": self.version,
             }
         # Build input files list
         files = []
