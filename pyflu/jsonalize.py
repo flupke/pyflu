@@ -339,6 +339,9 @@ def is_serialized_state(state):
 
 
 def looks_like_mapping(obj):
+    """
+    Return True if *obj* looks like a mapping type object.
+    """
     meths = ("items", "keys", "values")
     for meth in meths:
         if not callable(getattr(obj, meth, None)):
