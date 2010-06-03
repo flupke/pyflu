@@ -154,7 +154,7 @@ class JSONAlizableBase(object):
             # copy.deepcopy()
             try:
                 default_copy = copy(default)
-            except JSONAlizeError:
+            except (JSONAlizeError, TypeError):
                 default_copy = deepcopy(default)
             setattr(self, name, 
                     unserialize(kwargs.pop(name, default_copy)))
