@@ -1,7 +1,10 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from pyflu.qt.models.treenode import RenameError, FolderNode
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 
 class TreeModel(QAbstractItemModel):
