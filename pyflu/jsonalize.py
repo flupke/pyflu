@@ -40,10 +40,14 @@ functions::
     assert obj == obj2
 
 """
-
+from __future__ import with_statement
+try:
+    from json import dumps  
+    del dumps
+    import json
+except ImportError:
+    import simplejson as json
 from copy import deepcopy
-import collections
-import json
 from pyflu.meta.inherit import InheritMeta
 
 
@@ -146,8 +150,14 @@ class JSONAlizableBase(object):
         :attr:`schema`. Omitted parameters are set to their default value.
         """
         for name, default in self.schema.items():
+            # Try to copy the default value with jsonalize's copy(), else use
+            # copy.deepcopy()
+            try:
+                default_copy = copy(default)
+            except JSONAlizeError:
+                default_copy = deepcopy(default)
             setattr(self, name, 
-                    unserialize(kwargs.pop(name, deepcopy(default))))
+                    unserialize(kwargs.pop(name, default_copy)))
         if kwargs:
             raise NameError("unknown parameters passed to constructor: %s" %
                     ", ".join(kwargs.keys()))
@@ -209,7 +219,7 @@ def serialize(obj):
                 "__args__": args,
                 "__kwargs__": kwargs,
             }
-    elif isinstance(obj, collections.Mapping):
+    elif looks_like_mapping(obj):
         # Mapping like object
         data = {}
         for key, value in obj.iteritems():
@@ -321,11 +331,19 @@ def is_serialized_state(state):
     """
     Returns True if *state* appears to be a serialized object.
     """
-    if isinstance(state, collections.Mapping) and len(state) == 3 \
+    if looks_like_mapping(state) and len(state) == 3 \
             and "__class__" in state and "__args__" in state \
             and "__kwargs__" in state:
         return True
     return False    
+
+
+def looks_like_mapping(obj):
+    meths = ("items", "keys", "values")
+    for meth in meths:
+        if not callable(getattr(obj, meth, None)):
+            return False
+    return True
 
 
 # Register common builtin types
