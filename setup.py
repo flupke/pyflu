@@ -17,8 +17,8 @@ setup(
 """Helpers for standard Python modules, things that I frequently use in
 my projects and find useful.
 
-The ``update`` package depends on bsdiff_. Ubuntu users can find it in the
-``python-bsdiff`` package.
+The ``update`` package depends on bsdiff_ and lxml. They can be found in the
+Debian packages ``python-bsdiff`` and ``python-lxml``.
 
 .. _bsdiff: http://starship.python.net/crew/atuining/cx_bsdiff/index.html
 """,
@@ -28,8 +28,6 @@ The ``update`` package depends on bsdiff_. Ubuntu users can find it in the
             "License :: OSI Approved :: BSD License",
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
-
-    setup_requires = ["nose"],
 
     packages = find_packages(),
 )

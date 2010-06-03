@@ -1,7 +1,8 @@
 from os.path import dirname, join
-from PyQt4.QtGui import QIcon, QPixmap, QCursor, QFileDialog, QApplication, \
-        qRgb, qRgba, QDialog
-from PyQt4.QtCore import Qt, QSettings, QVariant, PYQT_VERSION, QString
+from PyQt4.QtGui import (QIcon, QPixmap, QCursor, QFileDialog, QApplication, 
+        qRgb, qRgba, QDialog)
+from PyQt4.QtCore import (Qt, QSettings, QVariant, PYQT_VERSION, QString,
+        QCoreApplication)
 import warnings
 import types
 
@@ -123,12 +124,12 @@ def unpack_rgba(value):
     return red, green, blue, alpha
 
 
-def get_or_create_app(args=None):
+def get_or_create_app(args=None, cls=QApplication):
     if args is None:
         args = []
-    app = QApplication.instance()
+    app = cls.instance()
     if app is None:
-        app = QApplication(args)
+        app = cls(args)
     return app
     
 
