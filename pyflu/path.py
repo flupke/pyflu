@@ -1,6 +1,7 @@
 """Path related utilities."""
 
 import os
+import sys
 from os.path import commonprefix, abspath, join, splitext
 
 
@@ -32,4 +33,13 @@ def iter_files(ext_filter, path=".", exclude=None):
                     yield join(dirpath, fname)
 
 
+def file_mtime(path):
+    """
+    Get the (correct) modification time of the file at *path*.
+    """
+    stat = os.stat(path)
+    mtime = stat.st_mtime
+    if sys.platform == "win32":
+        mtime -= stat.st_ctime
+    return mtime
 
