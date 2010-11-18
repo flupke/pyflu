@@ -1,7 +1,7 @@
 import sys
 import os
 import hashlib
-from os.path import join, commonprefix, isfile, isdir, dirname
+from os.path import join, commonprefix, isfile, isdir, dirname, basename
 from pyflu.path import sub_path
 import bsdiff
 import tarfile
@@ -342,14 +342,15 @@ def usage():
     print "usage: %s [diff|patch] [dest] [orig] [new]" % sys.argv[0]
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        usage()
+def makepatch():
+    """
+    Entry points for the create patch command line script.
+    """
+    try:
+        olddir, newdir, patchfile = sys.argv[1:]
+    except:
+        print >>sys.stderr, ("usage: %s olddir newdir patchfile" 
+                % basename(sys.argv[0]))
         sys.exit(1)
-    if sys.argv[1] == "diff":
-        diff(*sys.argv[2:])
-    elif sys.argv[1] == "patch":
-        patch(*sys.argv[2:])
-    else:
-        usage()
-        sys.exit(1)
+    diff(patchfile, olddir, newdir)
+    sys.exit(0)

@@ -1,8 +1,10 @@
 import os
+from nose.tools import assert_true
 from os.path import dirname, join, isdir, isfile
 from pyflu.update import patch, diff, sub_path, control_sum, \
         InvalidOriginalFile, InvalidResultingFile, IncompatiblePatchFormat, \
         archive_path
+from pyflu.update.version import Version
 import shutil
 
 
@@ -17,7 +19,15 @@ bad_patch_file = join(data_dir, "bad_patch.tar.bz2")
 incompatible_patch_file = join(data_dir, "incompatible_patch.tar.bz2")
 
 
-def one_way_compare(d1, d2, visited):
+def one_way_compare(d1, d2, visited=None):
+    """
+    Compare directory *d2* against *d1* for removal and changes.
+
+    Raise an error if a file present in *d1* is not found or is different from
+    the one found in *d2*, but ignores files present in *d2* and not in *d1*.
+    """
+    if visited is None:
+        visited = {}
     for base, dirs, files in os.walk(d1):
         sub_dir = sub_path(base, d1)
         for file in files:
@@ -90,7 +100,33 @@ def test_error():
         raise AssertionError("IncompatiblePatchFormat not raised")
 
 
-def teardown():
+def test_version():
+    version_groups = [[
+        "1.0",
+        "1.0a",
+        "1.0beta",
+        "1.0pre",
+        "1.0pre2",
+        "1.1",
+        "1.1.2",
+        "1.1.2_3",
+        "1.1.2_10",
+    ],
+    [
+        "r1-flap"
+        "r1234"
+        "r12345-final"
+    ]]
+    for group in version_groups:
+        prev = None
+        for version in group:
+            obj = Version(version)
+            if prev is not None:
+                assert_true(obj > prev)
+            prev = obj
+
+
+def setup():
     if isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     if isfile(patch_file):

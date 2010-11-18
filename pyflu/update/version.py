@@ -15,6 +15,8 @@ class Version(object):
          1.0pre2
          1.1
          1.1.2
+         1.1.2_3
+         1.1.2_10
      * snapshot versions, composed by a revision number and an optional branch
        specifier. The branch specifier is ignored in comparisons:
          r1
@@ -33,9 +35,16 @@ class Version(object):
         match = self.release_pattern.match(version_string)        
         if match:
             self.is_release = True
-            self.release_numbers = [int(n) for n in 
-                    match.group("release").split(".")]
+            self.release_numbers = tuple(int(n) for n in 
+                    match.group("release").split("."))
             self.release_suffix = match.group("suffix")
+            if "_" in self.release_suffix:
+                pre, rev = self.release_suffix.rsplit("_", 1)
+                rev = int(rev)
+            else:
+                pre = self.release_suffix
+                rev = 0
+            self.release_suffix = (pre, rev)
         else:
             match = self.snapshot_pattern.match(version_string)
             if match:
@@ -74,3 +83,8 @@ class Version(object):
 
     def __str__(self):
         return self.version_string
+
+    def __hash__(self):
+        if self.is_release:
+            return hash((self.release_numbers, self.release_suffix))
+        return hash(self.snapshot_revision)

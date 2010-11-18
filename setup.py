@@ -30,4 +30,8 @@ Debian packages ``python-bsdiff`` and ``python-lxml``.
         ],
 
     packages = find_packages(),
+
+    entry_points = {
+        "console_scripts": ["pyflu-makepatch = pyflu.update:makepatch"],
+    },
 )
