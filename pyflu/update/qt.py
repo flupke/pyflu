@@ -32,7 +32,7 @@ class UpdateDialogMixin(object):
     _properties = ["update_url", "patch_files_pattern"]
 
     update_url = None
-    version_pattern = r"(?P<%s>r?[0-9a-zA-Z_-]+?)"
+    version_pattern = r"(?P<%s>r?[0-9a-zA-Z_.-]+?)"
     patch_files_pattern = r"^patch-%s-%s\.tar\.bz2" % \
             (version_pattern % "from", version_pattern % "to")
     current_version = None
