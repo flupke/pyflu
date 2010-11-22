@@ -4,6 +4,7 @@ import sys
 import shutil
 import re
 import louie
+import urllib2
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *    
 from PyQt4.QtNetwork import *
@@ -11,6 +12,7 @@ from pyflu.update import patch, signals
 from pyflu.command import run_script
 from pyflu.update.remote import find_patches_groups
 from pyflu.update.version import Version
+from pyflu.qt.util import get_or_create_app
 
 
 class UpdateDialogMixin(object):
@@ -38,17 +40,20 @@ class UpdateDialogMixin(object):
     current_version = None
     patch_dl_dir = None
     patch_target_dir = None
+    progress_bar_name = "progress_bar"
+    operation_label_name = "operation_label"
 
     def start_update(self, confirm=True):
         """
         Shows the dialog and starts the update process.
 
         If *confirm* is True, a confirmation dialog is shown before starting
-        the update.
+        the update. The :class:`~pyflu.update.signals.not_updated` signal is
+        sent if no update was performed (either because there was no update
+        available or the user refused to apply it).
         """
+        # Check for updates
         self.patches_paths = []
-        QDialog.show(self)
-        # Check for updates if we are running a frozen executable
         self.start_long_operation(
                 self.trUtf8("Searching for updates..."), 1)
         self.download_queue = self._updates_urls()
@@ -67,26 +72,32 @@ class UpdateDialogMixin(object):
             if do_update:
                 self._download_next()
                 return
-            else:
-                self._exit(0)
-                return
+        louie.send(signals.not_updated, self)
 
     def start_long_operation(self, text, length):
-        self.operation_label.setText(text)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setRange(0, length)
+        pb = getattr(self, self.progress_bar_name)
+        ol = getattr(self, self.operation_label_name)
+        ol.setText(text)
+        pb.setValue(0)
+        pb.setRange(0, length)
+        app = get_or_create_app()
+        app.processEvents()
 
     def update_long_operation(self, index):
-        self.progress_bar.setValue(index)
+        pb = getattr(self, self.progress_bar_name)
+        pb.setValue(index)
+        app = get_or_create_app()
+        app.processEvents()
 
     def _download_next(self):
+        pb = getattr(self, self.progress_bar_name)
+        ol = getattr(self, self.operation_label_name)
         # Open download file object
         self.download_url = self.download_queue.pop(0)        
         fname = basename(self.download_url)
         self.save_path = join(self.patch_dl_dir, fname)
-        self.operation_label.setText(self.trUtf8("Downloading '%1'")
-                .arg(fname))
-        self.progress_bar.setValue(0)
+        ol.setText(self.trUtf8("Downloading '%1'").arg(fname))
+        pb.setValue(0)
         self.file = QFile(self.save_path)
         self.file.open(QFile.ReadWrite)
         # Start download
@@ -98,8 +109,9 @@ class UpdateDialogMixin(object):
         self.reply.finished.connect(self._download_finished)
 
     def _update_download_progress(self, received, total):
-        self.progress_bar.setRange(0, total)
-        self.progress_bar.setValue(received)
+        pb = getattr(self, self.progress_bar_name)
+        pb.setRange(0, total)
+        pb.setValue(received)
 
     def _flush_download(self):
         self.file.write(self.reply.readAll())
@@ -190,14 +202,20 @@ class UpdateDialogMixin(object):
         Returns a list of urls pointing to the updates needed to upgrade to the
         latest version.
         """
-        groups = find_patches_groups(self.update_url,
-                re.compile(self.patch_files_pattern))
-        # Find patches chain entry point
-        current_version = Version(self.current_version)
-        group = groups.get(current_version, [])
-        return [x[2] for x in group]
+        try:
+            groups = find_patches_groups(self.update_url,
+                    re.compile(self.patch_files_pattern))
+        except urllib2.HTTPError, err:
+            pb = getattr(self, self.progress_bar_name)
+            ol = getattr(self, self.operation_label_name)
+            pb.setValue(0)
+            ol.setText(self.trUtf8("Error opening update url: %1")
+                    .arg(unicode(err)))                
+        else:
+            # Find patches chain entry point
+            current_version = Version(self.current_version)
+            group = groups.get(current_version, [])
+            return [x[2] for x in group]
 
 
 __all__ = ["StartupDialog"]
-
-
