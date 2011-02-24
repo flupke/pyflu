@@ -1,10 +1,11 @@
 from os.path import dirname, join
+import warnings
+import types
+import functools
 from PyQt4.QtGui import (QIcon, QPixmap, QCursor, QFileDialog, QApplication, 
         qRgb, qRgba, QDialog)
 from PyQt4.QtCore import (Qt, QSettings, QVariant, PYQT_VERSION, QString,
         QCoreApplication)
-import warnings
-import types
 
 
 def icon_from_res(path):
@@ -19,14 +20,15 @@ def long_operation(func):
     Decorator that changes the application cursor during the execution of a
     function.
     """
-    def f(*args, **kwargs):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         try:
             res = func(*args, **kwargs)
         finally:
             QApplication.restoreOverrideCursor()
         return res
-    return f
+    return wrapper
 
 
 def get_save_path(parent, settings_path, default_filename=None, 

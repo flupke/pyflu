@@ -47,11 +47,11 @@ class BugReportDialog(QDialog, Ui_BugReportDialog):
         parts = []
         if self.main_traceback is not None:
             parts.append(format_html_exception(*self.main_traceback,
-                    with_links=settings.DEV_MODE))
+                **{"with_links": settings.DEV_MODE}))
         for index, tb in enumerate(self.threads_tracebacks.values()):
             parts.append(u"Thread %d:" % (index + 1))
             parts.append(format_html_exception(*tb, 
-                with_links=settings.DEV_MODE))
+                **{"with_links": settings.DEV_MODE}))
         if settings.DEV_MODE:
             self.traceback_text.setHtml("".join(parts))
         else:
