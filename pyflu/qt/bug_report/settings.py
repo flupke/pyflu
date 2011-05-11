@@ -10,3 +10,4 @@ EXTERNAL_EDITOR = "/usr/bin/gvim --remote-silent %f +%n"
 
 # Email to which bug reports are sent
 BUG_REPORT_EMAIL = None
+BUG_REPORT_EMAIL_SUBJECT = "Bug report"

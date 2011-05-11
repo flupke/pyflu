@@ -60,7 +60,7 @@ class BugReportDialog(QDialog, Ui_BugReportDialog):
     def send_email(self):
         url = u"mailto:%s?subject=%s&body=%s\n\n%s" % (
             settings.BUG_REPORT_EMAIL, 
-            unicode(self.trUtf8("[Palette]: Bug report")),
+            settings.BUG_REPORT_EMAIL_SUBJECT,
             unicode(self.report_text.toPlainText()),
             unicode(self.traceback_text.toPlainText()))
         QDesktopServices.openUrl(QUrl(url))
