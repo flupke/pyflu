@@ -3,7 +3,7 @@ Simple subclasses of basic Qt input widgets that can be manipulated through a
 single property.
 """
 
-from PyQt4.QtGui import QLineEdit, QSpinBox, QDoubleSpinBox
+from PyQt4.QtGui import QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox
 
 
 class ValueLineEdit(QLineEdit):
@@ -37,3 +37,14 @@ class ValueDoubleSpinBox(QDoubleSpinBox):
     @value.setter
     def value(self, value):
         self.setValue(value)        
+
+
+class ValueCheckBox(QCheckBox):
+
+    @property
+    def value(self):
+        return self.isChecked()
+
+    @value.setter
+    def value(self, value):
+        self.setChecked(bool(value))
