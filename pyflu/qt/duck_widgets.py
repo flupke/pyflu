@@ -3,7 +3,8 @@ Simple subclasses of basic Qt input widgets that can be manipulated through a
 single property.
 """
 
-from PyQt4.QtGui import QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox
+from PyQt4.QtGui import (QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox,
+        QComboBox)
 
 
 class ValueLineEdit(QLineEdit):
@@ -48,3 +49,25 @@ class ValueCheckBox(QCheckBox):
     @value.setter
     def value(self, value):
         self.setChecked(bool(value))
+
+
+class ValueComboBox(QComboBox):
+
+    use_indices = True
+    """
+    If :attr:`use_indices` is False, values are stored in the combo box's user
+    data rather than indices.
+    """
+
+    @property
+    def value(self):
+        if self.use_indices:
+            return self.currentIndex()
+        return self.itemData(self.currentIndex()).toPyObject()
+
+    @value.setter
+    def value(self, value):
+        if self.use_indices:
+            self.setCurrentIndex(value)
+        else:
+            self.setCurrentIndex(self.findData(value))
