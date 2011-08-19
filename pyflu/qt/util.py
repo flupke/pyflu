@@ -62,14 +62,15 @@ def get_save_path(parent, settings_path, default_filename=None,
     if filter is not None:
         dlg.setNameFilter(format_file_dialog_filter_string(filter))
     if dlg.exec_() != QDialog.Accepted:
-        return None
+        return
     save_path = unicode(dlg.selectedFiles()[0])
     # Remember save location directory
     settings.setValue(settings_path, QVariant(dirname(save_path)))
     return save_path
 
 
-def get_open_path(parent, settings_path=None, filter=None):
+def get_open_path(parent, settings_path=None, filter=None,
+        default_filename=None):
     """
     Shows an 'open file' dialog and returns the selected path.
 
@@ -81,7 +82,9 @@ def get_open_path(parent, settings_path=None, filter=None):
     definitions. See the :func:`format_file_dialog_filter_string` docstring for
     details.
 
-    Returns None if the user canceled.
+    If *default_filename* is given, select this file.
+
+    Return None if the user canceled.
     """
     # Get the last used save directory
     settings = QSettings()
@@ -90,18 +93,21 @@ def get_open_path(parent, settings_path=None, filter=None):
             QVariant(u"")).toString())
     else:
         last_dir = QString()
-    # Get save location
+    # Get open location
+    dlg = QFileDialog(parent)
+    dlg.setWindowTitle(parent.trUtf8("Open"))
+    dlg.setFileMode(QFileDialog.ExistingFile)
+    dlg.setAcceptMode(QFileDialog.AcceptOpen)
+    dlg.setDirectory(last_dir)
+    if default_filename is not None:
+        dlg.selectFile(default_filename)
     if filter is not None:
-        filter = format_file_dialog_filter_string(filter)
-    else:
-        filter = QString()
-    open_path = QFileDialog.getOpenFileName(parent, parent.trUtf8("Open"), 
-            last_dir, filter)
-    if open_path.isNull():
-        return None
-    open_path = unicode(open_path)
+        dlg.setNameFilter(format_file_dialog_filter_string(filter))
+    if dlg.exec_() != QDialog.Accepted:
+        return
+    open_path = unicode(dlg.selectedFiles()[0])
     if settings_path is not None:
-        # Remember save location directory
+        # Remember opened location directory
         settings.setValue(settings_path, QVariant(dirname(open_path)))
     return open_path
 
