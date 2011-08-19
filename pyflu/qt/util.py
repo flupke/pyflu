@@ -70,13 +70,13 @@ def get_save_path(parent, settings_path, default_filename=None,
 
 
 def get_open_path(parent, settings_path=None, filter=None,
-        default_filename=None):
+        default_dir=None, default_filename=None):
     """
     Shows an 'open file' dialog and returns the selected path.
 
-    Also remembers the selected folder, so that subsequent calls to this
+    Also remembers the selected directory, so that subsequent calls to this
     function with the same *settings_path* will open in the last selected
-    directory.
+    directory. The default directory can also be forced with *default_dir*.
 
     If *filter* is specified, it must be an iterable containing filters
     definitions. See the :func:`format_file_dialog_filter_string` docstring for
@@ -88,17 +88,19 @@ def get_open_path(parent, settings_path=None, filter=None,
     """
     # Get the last used save directory
     settings = QSettings()
-    if settings_path is not None:
-        last_dir = unicode(settings.value(settings_path,
-            QVariant(u"")).toString())
-    else:
-        last_dir = QString()
+    if default_dir is None:
+        if settings_path is not None:
+            last_dir = unicode(settings.value(settings_path,
+                QVariant(u"")).toString())
+        else:
+            last_dir = QString()
+        default_dir = last_dir 
     # Get open location
     dlg = QFileDialog(parent)
     dlg.setWindowTitle(parent.trUtf8("Open"))
     dlg.setFileMode(QFileDialog.ExistingFile)
     dlg.setAcceptMode(QFileDialog.AcceptOpen)
-    dlg.setDirectory(last_dir)
+    dlg.setDirectory(default_dir)
     if default_filename is not None:
         dlg.selectFile(default_filename)
     if filter is not None:
