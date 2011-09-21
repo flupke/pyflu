@@ -34,8 +34,9 @@ class BugReportDialog(QDialog, Ui_BugReportDialog):
         self.report_text.clear()
         self.traceback_text.clear()
 
-    def add_tb(self, type, value, tb):
-        thread_id = thread.get_ident()
+    def add_tb(self, thread_id, type, value, tb):
+        if not self.isVisible():
+            self.show()
         if thread_id == self.main_thread_id and self.main_traceback is None:
             self.main_traceback = (type, value, tb)
             self.update_tb_text()
