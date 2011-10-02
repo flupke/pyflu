@@ -12,7 +12,6 @@ from pyflu.update import patch, signals
 from pyflu.command import run_script
 from pyflu.update.remote import find_patches_groups
 from pyflu.update.version import Version
-from pyflu.qt.util import get_or_create_app
 
 
 class UpdateDialogMixin(object):
@@ -80,14 +79,12 @@ class UpdateDialogMixin(object):
         ol.setText(text)
         pb.setValue(0)
         pb.setRange(0, length)
-        app = get_or_create_app()
-        app.processEvents()
+        QCoreApplication.processEvents()
 
     def update_long_operation(self, index):
         pb = getattr(self, self.progress_bar_name)
         pb.setValue(index)
-        app = get_or_create_app()
-        app.processEvents()
+        QCoreApplication.processEvents()
 
     def _download_next(self):
         pb = getattr(self, self.progress_bar_name)
