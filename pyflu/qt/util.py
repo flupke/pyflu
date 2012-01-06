@@ -70,7 +70,7 @@ def get_save_path(parent, settings_path, default_filename=None,
 
 
 def get_open_path(parent, settings_path=None, filter=None,
-        default_dir=None, default_filename=None):
+        default_dir=None, default_filename=None, select_directory=False):
     """
     Shows an 'open file' dialog and returns the selected path.
 
@@ -83,6 +83,9 @@ def get_open_path(parent, settings_path=None, filter=None,
     details.
 
     If *default_filename* is given, select this file.
+
+    If *select_directory* is ``True``, a directory is selected instead of a 
+    file.
 
     Return None if the user canceled.
     """
@@ -98,7 +101,10 @@ def get_open_path(parent, settings_path=None, filter=None,
     # Get open location
     dlg = QFileDialog(parent)
     dlg.setWindowTitle(parent.trUtf8("Open"))
-    dlg.setFileMode(QFileDialog.ExistingFile)
+    if select_directory:
+        dlg.setFileMode(QFileDialog.Directory)
+    else:
+        dlg.setFileMode(QFileDialog.ExistingFile)
     dlg.setAcceptMode(QFileDialog.AcceptOpen)
     dlg.setDirectory(default_dir)
     if default_filename is not None:
