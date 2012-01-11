@@ -116,7 +116,11 @@ def get_open_path(parent, settings_path=None, filter=None,
     open_path = unicode(dlg.selectedFiles()[0])
     if settings_path is not None:
         # Remember opened location directory
-        settings.setValue(settings_path, QVariant(dirname(open_path)))
+        if select_directory:
+            saved = open_path
+        else:
+            saved = dirname(open_path)
+        settings.setValue(settings_path, QVariant(saved))
     return open_path
 
 
