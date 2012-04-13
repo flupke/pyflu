@@ -22,8 +22,7 @@ class Command(object):
         stdout = stderr = subprocess.PIPE
         if subprocess.call([self.cmd], env=env, cwd=self.cwd, 
                 shell=True, stdout=stdout, stderr=stderr) and stop_on_errors:
-            raise self.error_class("command '%s' returned %i" % 
-                    (self.cmd, process.returncode))
+            raise self.error_class("error executing '%s'" % self.cmd)
 
     def __repr__(self):
         return "<Command: %s>" % self.cmd
