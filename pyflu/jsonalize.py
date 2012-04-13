@@ -76,8 +76,8 @@ def register(cls, uncall, name=None, constructor=None):
     a tuple containing the positionnal and keyword arguments, in an iterable
     and a mapping.
 
-    If *name* is given it is used to as the code to register *cls*. The default
-    is to use *cls*' name.
+    If *name* is given it is used as the code name to register *cls*. The
+    default is to use *cls*' name.
 
     You can specify *constructor* to alter the way instances are created from
     the serialized state. It should be a callable and will be passed the
@@ -171,8 +171,8 @@ class JSONAlizableBase(object):
         Returns the constructor parameters needed to serialize the instance, as
         a tuple containing positionnal arguments and keyword arguments.
 
-        The default implementation returns the attributes defined in
-        :attr:`schema` processed by :func:`serialize`.
+        The default implementation returns a dict containing the object
+        attributes defined in :attr:`schema` processed by :func:`serialize`.
         """
         args = {}
         for name in self.schema:
@@ -188,7 +188,7 @@ class JSONAlizableBase(object):
         with open(filename, "r") as fp:
             ret = load(fp)
         if not isinstance(ret, cls):
-            raise TypeError("invalid type serialized type: expected '%s' "
+            raise TypeError("invalid serialized type: expected '%s' "
                     "got '%s'" % (cls, type(ret)))
         return ret
 
@@ -245,7 +245,7 @@ def unserialize(state):
             ret.append(unserialize(value))
     elif isinstance(state, dict):
         if is_serialized_state(state):
-            # Looks to be a serialized class
+            # Looks like a serialized object
             cls = get_class(state["__class__"])
             # Force kwargs keys to be of str type
             kwargs = {}
