@@ -1,4 +1,4 @@
-from os.path import basename, join, dirname, isdir
+from os.path import basename, join, isdir
 import os
 import sys
 import shutil
@@ -9,7 +9,6 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *    
 from PyQt4.QtNetwork import *
 from pyflu.update import patch, signals
-from pyflu.command import run_script
 from pyflu.update.remote import find_patches_groups
 from pyflu.update.version import Version
 
@@ -202,7 +201,7 @@ class UpdateDialogMixin(object):
         try:
             groups = find_patches_groups(self.update_url,
                     re.compile(self.patch_files_pattern))
-        except urllib2.HTTPError, err:
+        except IOError, err:
             pb = getattr(self, self.progress_bar_name)
             ol = getattr(self, self.operation_label_name)
             pb.setValue(0)
