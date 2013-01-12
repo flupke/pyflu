@@ -4,3 +4,4 @@ pyflu.egg-info
 .coverage
 *.cover
 pyflu/tests/test_update/data/*
+*.pyc
