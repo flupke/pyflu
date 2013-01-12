@@ -206,12 +206,9 @@ class UpdateDialogMixin(object):
             ol = getattr(self, self.operation_label_name)
             pb.setValue(0)
             ol.setText(self.trUtf8("Error opening update url: %1")
-                    .arg(unicode(err)))                
+                    .arg(str(err)))
         else:
             # Find patches chain entry point
             current_version = Version(self.current_version)
             group = groups.get(current_version, [])
             return [x[2] for x in group]
-
-
-__all__ = ["StartupDialog"]
